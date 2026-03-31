@@ -1,0 +1,1 @@
+ALTER TABLE public.analyses ADD COLUMN categoria_objecao text, ADD COLUMN categoria_erro text;

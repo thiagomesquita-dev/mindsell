@@ -1,0 +1,105 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Slab:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* CobraMind Palette - Purple/Indigo Corporate */
+    --background: 0 0% 97%; /* #F7F7F7 Light gray */
+    --foreground: 220 20% 14%; /* #1E2432 Dark navy */
+
+    --card: 0 0% 100%; /* #FFFFFF White */
+    --card-foreground: 220 20% 14%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 20% 14%;
+
+    --primary: 252 68% 47%; /* #4A2DC9 Deep purple */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 10% 95%; /* #F0F0F5 Light lavender */
+    --secondary-foreground: 220 20% 14%;
+
+    --muted: 240 8% 92%;
+    --muted-foreground: 220 10% 46%; /* #6B7280 Slate gray */
+
+    --accent: 252 68% 47%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 78% 55%; /* #E04040 Red */
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 160 60% 42%; /* #27AE6B Emerald */
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%; /* #F5A623 Amber */
+    --warning-foreground: 0 0% 100%;
+
+    --border: 220 13% 90%; /* #E2E4E9 */
+    --input: 220 13% 90%;
+    --ring: 252 68% 47%;
+
+    --radius: 12px; /* Rounded corners */
+
+    --sidebar-background: 252 68% 47%; /* Purple sidebar */
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 0 0% 100%;
+    --sidebar-primary-foreground: 252 68% 47%;
+    --sidebar-accent: 252 60% 55%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 252 60% 55%;
+    --sidebar-ring: 0 0% 100%;
+
+    --font-heading: 'Roboto Slab', serif;
+    --font-body: 'Inter', sans-serif;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+  }
+}
+
+/* Waveform animation for analyze button */
+@keyframes waveform-pulse {
+  0%, 100% { transform: scaleY(0.3); }
+  50% { transform: scaleY(1); }
+}
+
+.waveform-bar {
+  animation: waveform-pulse 1.2s ease-in-out infinite;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--background));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
+}

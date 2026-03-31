@@ -1,0 +1,1 @@
+ALTER TABLE public.analyses ADD COLUMN IF NOT EXISTS oportunidades_fechamento_perdidas integer NOT NULL DEFAULT 0;

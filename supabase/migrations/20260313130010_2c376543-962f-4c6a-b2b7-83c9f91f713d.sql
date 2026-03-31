@@ -1,0 +1,1 @@
+ALTER TABLE public.analyses ADD COLUMN IF NOT EXISTS marcacoes_transcricao jsonb DEFAULT '[]'::jsonb;

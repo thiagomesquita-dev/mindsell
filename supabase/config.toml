@@ -1,0 +1,31 @@
+project_id = "cocmjhgvlvpseloyeexr"
+
+[functions.analisar-negociacao]
+verify_jwt = false
+
+[functions.gerar-ciclo-operador]
+verify_jwt = false
+
+[functions.gerar-relatorio-semanal]
+verify_jwt = false
+
+[functions.diagnostico-radar]
+verify_jwt = false
+
+[functions.criar-supervisor]
+verify_jwt = false
+
+[functions.gerar-treino]
+verify_jwt = false
+
+[functions.avaliar-treino]
+verify_jwt = false
+
+[functions.gerar-treino-automatico]
+verify_jwt = false
+
+[functions.reanalisar]
+verify_jwt = false
+
+[functions.cadastrar-gestor]
+verify_jwt = false
