@@ -116,7 +116,7 @@ export default function FinancialImport() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("operator_name_mappings")
-        .select("nome_arquivo, operador_cobramind")
+        .select("nome_arquivo, operador_mindsell")
         .eq("empresa_id", profile!.empresa_id!);
       if (error) throw error;
       return data;
@@ -125,7 +125,7 @@ export default function FinancialImport() {
   });
 
   const savedMappings = savedMappingsRaw.reduce<Record<string, string>>((acc, m) => {
-    acc[m.nome_arquivo] = m.operador_cobramind;
+    acc[m.nome_arquivo] = m.operador_mindsell;
     return acc;
   }, {});
 
@@ -256,14 +256,14 @@ export default function FinancialImport() {
         if (existing) {
           await supabase
             .from("operator_name_mappings")
-            .update({ operador_cobramind: m.operadorCobramind! })
+            .update({ operador_mindsell: m.operadorCobramind! })
             .eq("empresa_id", profile.empresa_id)
             .eq("nome_arquivo", m.nomeArquivo);
         } else {
           await supabase.from("operator_name_mappings").insert({
             empresa_id: profile.empresa_id,
             nome_arquivo: m.nomeArquivo,
-            operador_cobramind: m.operadorCobramind!,
+            operador_mindsell: m.operadorCobramind!,
             created_by: profile.id,
           });
         }
@@ -366,7 +366,7 @@ export default function FinancialImport() {
     <div className="space-y-8">
       <PageHeader
         title="Importação Financeira"
-        description="Importe dados financeiros do XLSX e vincule operadores ao CobraMind."
+        description="Importe dados financeiros do XLSX e vincule operadores ao MindSell."
       />
 
       {step === "upload" && (

@@ -5,7 +5,7 @@ import { PortfolioFilter } from "@/components/PortfolioFilter";
 import { OperatorFilter } from "@/components/OperatorFilter";
 import { DashboardChart } from "@/components/DashboardChart";
 import { DiagnosticoIA } from "@/components/DiagnosticoIA";
-import { AidaHeatmap } from "@/components/AidaHeatmap";
+import { VendaHeatmap } from "@/components/VendaHeatmap";
 import { FinancialMetrics } from "@/components/FinancialMetrics";
 import { metricExplanations } from "@/lib/metricExplanations";
 import { Activity, TrendingUp, Target, AlertTriangle } from "lucide-react";
@@ -73,7 +73,7 @@ export default function Dashboard() {
     queryFn: async () => {
       let query = supabase
         .from("analyses")
-        .select("score, chance_pagamento, risco_quebra, categoria_objecao, categoria_erro, tecnica_usada, carteira, operador, aida_atencao, aida_interesse, aida_desejo, aida_acao, created_at, intencao_cliente, capacidade_percebida, firmeza_compromisso")
+        .select("score, chance_pagamento, risco_quebra, categoria_objecao, categoria_erro, tecnica_usada, carteira, operador, venda_validacao, venda_exploracao, venda_necessidade, venda_demonstracao, venda_acao, created_at, intencao_cliente, capacidade_percebida, firmeza_compromisso")
         .order("created_at", { ascending: false });
       
       if (empresaFilter) {
@@ -116,7 +116,7 @@ export default function Dashboard() {
 
   const isOperatorFiltered = selectedOperator !== "Todos";
 
-  // Week boundaries for AIDA comparison
+  // Week boundaries for VENDA comparison
   const now = new Date();
   const dayOfWeek = now.getDay();
   const diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
@@ -219,15 +219,15 @@ export default function Dashboard() {
         </div>
       ) : (
         <>
-          {/* ── 2. Mapa da Negociação (AIDA) ── */}
+          {/* ── 2. Mapa da Negociação (VENDA) ── */}
           <section className="mb-10">
             <h2 className="font-heading text-base font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-              Mapa da Negociação da Operação (AIDA)
+              Mapa da Negociação da Operação (VENDA)
             </h2>
             <p className="text-sm text-muted-foreground font-body mb-4">
               Identifica em qual etapa da negociação a equipe está performando melhor ou pior.
             </p>
-            <AidaHeatmap analyses={analyses} previousWeekAnalyses={previousWeekAnalyses} />
+            <VendaHeatmap analyses={analyses} previousWeekAnalyses={previousWeekAnalyses} />
           </section>
 
           {/* ── 3. Principais Barreiras dos Clientes ── */}

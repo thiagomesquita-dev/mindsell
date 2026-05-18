@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ArrowLeft, CheckCircle2, XCircle, Brain, Lightbulb, MessageSquareDiff, Wrench, GraduationCap, Target, MessageSquareText, Info } from "lucide-react";
 import { getGradeBand, TRAINING_TOOLTIPS } from "@/lib/trainingMetrics";
+import { SupervisorFeedbackBlock } from "@/components/SupervisorFeedbackBlock";
 
 interface MCQuestion {
   pergunta: string;
@@ -26,7 +27,7 @@ interface TrainingContent {
   pergunta_decisao?: MCQuestion;
 }
 
-interface AidaEval {
+interface VendaEval {
   atencao: number;
   atencao_justificativa?: string;
   interesse: number;
@@ -38,7 +39,7 @@ interface AidaEval {
 }
 
 interface Evaluation {
-  aida?: AidaEval;
+  venda?: VendaEval;
   resumo_nota?: string;
   nota_final?: number;
   qualidade_resposta?: string;
@@ -65,7 +66,7 @@ function qualityBadge(val?: string | null) {
   return <Badge className="bg-destructive/20 text-destructive border-0 text-xs">Baixo</Badge>;
 }
 
-function AidaBar({ label, value, justification }: { label: string; value: number; justification?: string }) {
+function VendaBar({ label, value, justification }: { label: string; value: number; justification?: string }) {
   const pct = (value / 10) * 100;
   const color = value >= 7 ? "bg-success" : value >= 4 ? "bg-warning" : "bg-destructive";
   const textColor = value >= 7 ? "text-success" : value >= 4 ? "text-warning" : "text-destructive";
@@ -246,8 +247,8 @@ export default function TrainingDetail() {
           </Card>
         </div>
 
-        {/* AIDA + Como essa nota foi formada */}
-        {evaluation?.aida && (
+        {/* VENDA + Como essa nota foi formada */}
+        {evaluation?.venda && (
           <Card className="bg-card border-border">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2 text-foreground"><Brain className="h-4 w-4 text-primary" /> Como essa nota foi formada</CardTitle>
@@ -261,15 +262,15 @@ export default function TrainingDetail() {
                 </div>
               )}
               <div className="grid sm:grid-cols-2 gap-4">
-                <AidaBar label="Atenção (abertura e conexão)" value={evaluation.aida.atencao} justification={evaluation.aida.atencao_justificativa} />
-                <AidaBar label="Interesse (clareza da explicação)" value={evaluation.aida.interesse} justification={evaluation.aida.interesse_justificativa} />
-                <AidaBar label="Desejo (tratamento de objeções)" value={evaluation.aida.desejo} justification={evaluation.aida.desejo_justificativa} />
-                <AidaBar label="Ação (fechamento e compromisso)" value={evaluation.aida.acao} justification={evaluation.aida.acao_justificativa} />
+                <VendaBar label="Validação do contexto" value={evaluation.venda.atencao} justification={evaluation.venda.atencao_justificativa} />
+                <VendaBar label="Exploração da dor" value={evaluation.venda.interesse} justification={evaluation.venda.interesse_justificativa} />
+                <VendaBar label="Necessidade e impacto" value={evaluation.venda.desejo} justification={evaluation.venda.desejo_justificativa} />
+                <VendaBar label="Ação e próximo passo" value={evaluation.venda.acao} justification={evaluation.venda.acao_justificativa} />
               </div>
               <div className="border-t border-border pt-3 flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Média AIDA</span>
+                <span className="text-sm text-muted-foreground">Média VENDA</span>
                 <span className="text-sm font-heading font-bold text-primary">
-                  {((evaluation.aida.atencao + evaluation.aida.interesse + evaluation.aida.desejo + evaluation.aida.acao) / 4).toFixed(1)}/10
+                  {((evaluation.venda.atencao + evaluation.venda.interesse + evaluation.venda.desejo + evaluation.venda.acao) / 4).toFixed(1)}/10
                 </span>
               </div>
             </CardContent>
@@ -324,7 +325,7 @@ export default function TrainingDetail() {
               <p className="text-muted-foreground">{session.resposta_operador || "—"}</p>
             </div>
             <div className="p-3 bg-primary/5 rounded-lg space-y-1 border border-primary/20">
-              <p className="font-medium text-primary">Resposta Ideal — CobraMind</p>
+              <p className="font-medium text-primary">Resposta Ideal — MindSell</p>
               <p className="text-muted-foreground">{evaluation?.resposta_recomendada || "—"}</p>
             </div>
           </CardContent>
@@ -341,7 +342,7 @@ export default function TrainingDetail() {
               <p className="text-muted-foreground">{session.reflexao_operador || "—"}</p>
             </div>
             <div className="p-3 bg-warning/5 rounded-lg space-y-1 border border-warning/20">
-              <p className="font-medium text-warning">Lição Esperada — CobraMind</p>
+              <p className="font-medium text-warning">Lição Esperada — MindSell</p>
               <p className="text-muted-foreground">{evaluation?.licao_esperada || "—"}</p>
             </div>
           </CardContent>
@@ -369,6 +370,20 @@ export default function TrainingDetail() {
             </CardContent>
           </Card>
         )}
+
+        {/* Devolutiva da Supervisão */}
+        <SupervisorFeedbackBlock
+          sessionId={session.id}
+          status={session.status}
+          supervisorOwnerId={session.supervisor_id}
+          initial={{
+            supervisor_reviewed: (session as Record<string, unknown>).supervisor_reviewed as boolean | null | undefined,
+            supervisor_feedback_applied: (session as Record<string, unknown>).supervisor_feedback_applied as boolean | null | undefined,
+            supervisor_feedback_note: (session as Record<string, unknown>).supervisor_feedback_note as string | null | undefined,
+            supervisor_feedback_at: (session as Record<string, unknown>).supervisor_feedback_at as string | null | undefined,
+            supervisor_feedback_by: (session as Record<string, unknown>).supervisor_feedback_by as string | null | undefined,
+          }}
+        />
       </div>
     </div>
   );

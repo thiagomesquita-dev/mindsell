@@ -17,7 +17,7 @@ const objectionMap: Record<string, TooltipMeta> = {
     impacto: "", boaPratica: "",
   },
   "Não reconhece a dívida": {
-    descricao: "Cliente afirma desconhecer a origem da cobrança ou contesta a validade do débito apresentado.",
+    descricao: "Cliente afirma desconhecer a origem da vendas ou contesta a validade do débito apresentado.",
     impacto: "", boaPratica: "",
   },
   "Vai pensar": {
@@ -53,7 +53,7 @@ const objectionMap: Record<string, TooltipMeta> = {
     impacto: "", boaPratica: "",
   },
   "Dúvida sobre dívida": {
-    descricao: "Cliente questiona a origem ou validade da cobrança e pede esclarecimentos antes de considerar o pagamento.",
+    descricao: "Cliente questiona a origem ou validade da vendas e pede esclarecimentos antes de considerar o pagamento.",
     impacto: "", boaPratica: "",
   },
 };

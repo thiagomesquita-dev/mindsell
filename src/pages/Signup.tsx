@@ -42,8 +42,8 @@ export default function Signup() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
-          <img src={logo} alt="CobraMind" className="h-14 w-14 mb-4" />
-          <h1 className="font-heading text-2xl font-bold text-foreground">CobraMind</h1>
+          <img src={logo} alt="MindSell" className="h-14 w-14 mb-4" />
+          <h1 className="font-heading text-2xl font-bold text-foreground">MindSell</h1>
           <p className="text-sm text-muted-foreground mt-1">Crie sua conta de Gestão</p>
         </div>
 

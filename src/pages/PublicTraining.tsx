@@ -34,7 +34,7 @@ interface TrainingContent {
 }
 
 interface Evaluation {
-  aida?: { atencao: number; interesse: number; desejo: number; acao: number };
+  venda?: { atencao: number; interesse: number; desejo: number; acao: number };
   nota_final?: number;
   qualidade_resposta?: string;
   entendimento?: string;
@@ -133,7 +133,7 @@ function TrainingResult({ evaluation, session }: { evaluation: Evaluation; sessi
       </Card>
 
       {/* 1.5 — Como essa nota foi formada */}
-      {evaluation.aida && (
+      {evaluation.venda && (
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
@@ -143,10 +143,10 @@ function TrainingResult({ evaluation, session }: { evaluation: Evaluation; sessi
           </CardHeader>
           <CardContent className="space-y-2">
             {[
-              { label: "Atenção (abertura e conexão)", value: evaluation.aida.atencao },
-              { label: "Interesse (clareza da explicação)", value: evaluation.aida.interesse },
-              { label: "Desejo (tratamento de objeções)", value: evaluation.aida.desejo },
-              { label: "Ação (fechamento e compromisso)", value: evaluation.aida.acao },
+              { label: "Atenção (abertura e conexão)", value: evaluation.venda.atencao },
+              { label: "Interesse (clareza da explicação)", value: evaluation.venda.interesse },
+              { label: "Desejo (tratamento de objeções)", value: evaluation.venda.desejo },
+              { label: "Ação e próximo passo", value: evaluation.venda.acao },
             ].map((item) => (
               <div key={item.label} className="flex items-center justify-between text-sm">
                 <span className="text-slate-600">{item.label}</span>
@@ -172,15 +172,15 @@ function TrainingResult({ evaluation, session }: { evaluation: Evaluation; sessi
         </Badge>
       </div>
 
-      {/* 3 — Avaliação AIDA */}
-      {evaluation.aida && (
+      {/* 3 — Avaliação VENDA */}
+      {evaluation.venda && (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Avaliação AIDA</CardTitle>
+            <CardTitle className="text-sm">Avaliação VENDA</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             {(["atencao", "interesse", "desejo", "acao"] as const).map((key) => {
-              const val = evaluation.aida![key];
+              const val = evaluation.venda![key];
               const label = key === "atencao" ? "Atenção" : key === "interesse" ? "Interesse" : key === "desejo" ? "Desejo" : "Ação";
               return (
                 <div key={key} className="flex items-center justify-between">
@@ -314,7 +314,7 @@ function TrainingResult({ evaluation, session }: { evaluation: Evaluation; sessi
           {evaluation.resposta_recomendada && (
             <div>
               <p className="text-xs uppercase text-primary font-semibold mb-1 flex items-center gap-1">
-                <Lightbulb className="h-3 w-3" /> Resposta ideal do CobraMind
+                <Lightbulb className="h-3 w-3" /> Resposta ideal do MindSell
               </p>
               <div className="bg-primary/5 rounded-lg p-3 border border-primary/20">
                 <p className="text-sm text-slate-700 italic">"{evaluation.resposta_recomendada}"</p>
@@ -344,7 +344,7 @@ function TrainingResult({ evaluation, session }: { evaluation: Evaluation; sessi
           {evaluation.licao_esperada && (
             <div>
               <p className="text-xs uppercase text-teal-600 font-semibold mb-1 flex items-center gap-1">
-                <BookOpen className="h-3 w-3" /> Lição esperada pelo CobraMind
+                <BookOpen className="h-3 w-3" /> Lição esperada pelo MindSell
               </p>
               <div className="bg-teal-50 rounded-lg p-3 border border-teal-200">
                 <p className="text-sm text-teal-800">"{evaluation.licao_esperada}"</p>
@@ -560,7 +560,7 @@ export default function PublicTraining() {
         <div className="text-center mb-2">
           <div className="flex items-center justify-center gap-2 mb-2">
             <Dumbbell className="h-6 w-6 text-blue-600" />
-            <h1 className="text-xl font-bold text-slate-800">Treino CobraMind</h1>
+            <h1 className="text-xl font-bold text-slate-800">Treino MindSell</h1>
           </div>
           <p className="text-sm text-slate-500">
             Operador: <span className="font-medium">{session.operador}</span>

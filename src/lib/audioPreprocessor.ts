@@ -1,5 +1,5 @@
 /**
- * Audio Preprocessor for CobraMind
+ * Audio Preprocessor for MindSell
  * 
  * Uses Web Audio API to:
  * - Decode any audio format to raw PCM

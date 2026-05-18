@@ -118,7 +118,7 @@ export default function TrainingHistory() {
 
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const handleCopyLink = useCallback((row: TrainingRow) => {
-    const link = `https://app.cobramind.ia.br/treino/${row.token}`;
+    const link = `https://app.mindsell.ia.br/treino/${row.token}`;
     navigator.clipboard.writeText(link).then(() => {
       setCopiedId(row.id);
       toast.success("Link copiado!");

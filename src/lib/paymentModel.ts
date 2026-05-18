@@ -1,5 +1,5 @@
 /**
- * Modelo de cálculo da Chance de Pagamento — CobraMind
+ * Modelo de cálculo da Chance de Pagamento — MindSell
  *
  * A chance de pagamento é calculada a partir de 3 dimensões:
  *

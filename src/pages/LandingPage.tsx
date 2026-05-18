@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight, BarChart3, Brain, CheckCircle2, Eye, MessageSquareWarning, Send, Shield, Sparkles, Target, TrendingUp, Users, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const APP_URL = "https://app.cobramind.ia.br";
+const APP_URL = "https://app.mindsell.ia.br";
 
 function Header() {
   return (
@@ -10,7 +10,7 @@ function Header() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Brain className="h-7 w-7 text-primary" />
-          <span className="text-xl font-heading font-bold text-foreground">CobraMind</span>
+          <span className="text-xl font-heading font-bold text-foreground">MindSell</span>
         </div>
         <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
           <a href="#como-funciona" className="hover:text-foreground transition-colors">Como funciona</a>
@@ -33,7 +33,7 @@ function Hero() {
           Pare de perder acordos<br className="hidden sm:block" /> por erro de operador
         </h1>
         <p className="mt-6 text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-          O CobraMind analisa negociações, identifica falhas e transforma sua equipe em uma máquina de conversão.
+          O MindSell analisa negociações, identifica falhas e transforma sua equipe em uma máquina de conversão.
         </p>
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link to="/planos">
@@ -97,7 +97,7 @@ function SolutionSection() {
     <section className="py-20 sm:py-28 px-4 sm:px-6">
       <div className="max-w-5xl mx-auto text-center">
         <h2 className="text-3xl sm:text-4xl font-heading font-bold text-foreground">
-          O CobraMind transforma cada negociação em inteligência
+          O MindSell transforma cada negociação em inteligência
         </h2>
         <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {items.map(({ icon: Icon, text }) => (
@@ -115,7 +115,7 @@ function SolutionSection() {
 function HowItWorks() {
   const steps = [
     { num: "1", title: "Envie a negociação", desc: "Texto ou áudio da conversa com o cliente.", icon: Send },
-    { num: "2", title: "O CobraMind analisa com IA", desc: "Análise completa em segundos usando inteligência artificial.", icon: Brain },
+    { num: "2", title: "O MindSell analisa com IA", desc: "Análise completa em segundos usando inteligência artificial.", icon: Brain },
     { num: "3", title: "Receba diagnóstico completo", desc: "Score, chance de pagamento, erros, sugestões práticas.", icon: Sparkles },
     { num: "4", title: "Gere treino para o operador", desc: "Treinamento automático com avaliação pedagógica.", icon: Zap },
   ];
@@ -230,13 +230,13 @@ function Footer() {
       <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
         <div className="flex items-center gap-2">
           <Brain className="h-5 w-5 text-primary" />
-          <span className="font-heading font-bold text-foreground">CobraMind</span>
+          <span className="font-heading font-bold text-foreground">MindSell</span>
         </div>
         <div className="flex items-center gap-6">
           <a href={APP_URL} className="hover:text-foreground transition-colors">Acessar sistema</a>
-          <span>contato@cobramind.ia.br</span>
+          <span>contato@mindsell.ia.br</span>
         </div>
-        <span>© {new Date().getFullYear()} CobraMind. Todos os direitos reservados.</span>
+        <span>© {new Date().getFullYear()} MindSell. Todos os direitos reservados.</span>
       </div>
     </footer>
   );

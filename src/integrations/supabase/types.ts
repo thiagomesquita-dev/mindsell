@@ -81,11 +81,11 @@ export type Database = {
       }
       analyses: {
         Row: {
-          aida_acao: Json | null
-          aida_atencao: Json | null
-          aida_desejo: Json | null
-          aida_interesse: Json | null
-          aida_objecao: Json | null
+          venda_acao: Json | null
+          venda_validacao: Json | null
+          venda_necessidade: Json | null
+          venda_exploracao: Json | null
+          venda_objecao: Json | null
           audio_urls: string[] | null
           canal: string
           capacidade_percebida: number | null
@@ -131,11 +131,11 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          aida_acao?: Json | null
-          aida_atencao?: Json | null
-          aida_desejo?: Json | null
-          aida_interesse?: Json | null
-          aida_objecao?: Json | null
+          venda_acao?: Json | null
+          venda_validacao?: Json | null
+          venda_necessidade?: Json | null
+          venda_exploracao?: Json | null
+          venda_objecao?: Json | null
           audio_urls?: string[] | null
           canal: string
           capacidade_percebida?: number | null
@@ -181,11 +181,11 @@ export type Database = {
           user_id: string
         }
         Update: {
-          aida_acao?: Json | null
-          aida_atencao?: Json | null
-          aida_desejo?: Json | null
-          aida_interesse?: Json | null
-          aida_objecao?: Json | null
+          venda_acao?: Json | null
+          venda_validacao?: Json | null
+          venda_necessidade?: Json | null
+          venda_exploracao?: Json | null
+          venda_objecao?: Json | null
           audio_urls?: string[] | null
           canal?: string
           capacidade_percebida?: number | null
@@ -490,7 +490,7 @@ export type Database = {
           empresa_id: string
           id: string
           nome_arquivo: string
-          operador_cobramind: string
+          operador_mindsell: string
         }
         Insert: {
           carteira?: string | null
@@ -499,7 +499,7 @@ export type Database = {
           empresa_id: string
           id?: string
           nome_arquivo: string
-          operador_cobramind: string
+          operador_mindsell: string
         }
         Update: {
           carteira?: string | null
@@ -508,7 +508,7 @@ export type Database = {
           empresa_id?: string
           id?: string
           nome_arquivo?: string
-          operador_cobramind?: string
+          operador_mindsell?: string
         }
         Relationships: [
           {

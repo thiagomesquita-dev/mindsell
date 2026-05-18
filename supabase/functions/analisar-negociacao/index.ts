@@ -3,7 +3,7 @@ import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-
 
 // ─── Types ───
 
-interface AidaEvaluation {
+interface VendaEvaluation {
   nota: number;
   comentario: string;
 }
@@ -29,10 +29,11 @@ interface AIAnalysisResult {
   pontos_fortes: string[];
   pontos_melhorar: string[];
   sugestoes: string[];
-  aida_atencao: AidaEvaluation;
-  aida_interesse: AidaEvaluation;
-  aida_desejo: AidaEvaluation;
-  aida_acao: AidaEvaluation;
+  venda_validacao: VendaEvaluation;
+  venda_exploracao: VendaEvaluation;
+  venda_necessidade: VendaEvaluation;
+  venda_demonstracao: VendaEvaluation;
+  venda_acao: VendaEvaluation;
   tecnica_usada: string;
   objecao: string;
   tom_operador: string;
@@ -169,7 +170,7 @@ REGRAS DE AJUSTE POR TIPO DE CONTATO:
    - Reduzir chance_pagamento em pelo menos 20 pontos em relação ao que seria se fosse devedor direto.
    - Aumentar risco_quebra em pelo menos 15 pontos.
    - Promessas feitas por terceiros NÃO devem ser consideradas como fechamento real. Classificar firmeza_compromisso como fraca (máx 30).
-   - No comentário de aida_acao, registrar explicitamente: "Contato com terceiro — compromisso indireto, não equivale a fechamento com titular."
+   - No comentário de venda_acao, registrar explicitamente: "Contato com terceiro — compromisso indireto, não equivale a fechamento com titular."
 
 2. Se tipo_contato = "Sem contato efetivo":
    - Todas as notas AIDA devem ser 0 ou 1.
@@ -181,12 +182,12 @@ Se o cliente usar frases com "se", "quando", "depois que", "caso", "talvez", "vo
 - Classificar como INTENÇÃO FRACA.
 - intencao_cliente deve ser reduzido (máx 40 se houver predominância de frases condicionais).
 - firmeza_compromisso deve ser reduzido proporcionalmente.
-- No comentário de aida_acao, registrar: "Cliente usou linguagem condicional — intenção classificada como fraca."
+- No comentário de venda_acao, registrar: "Cliente usou linguagem condicional — intenção classificada como fraca."
 
 DETECÇÃO DE FALHA DE CREDIBILIDADE (REGRA CRÍTICA):
 Se o cliente questionar a legitimidade da cobrança, da empresa ou da dívida 2 ou mais vezes durante a conversa:
 - Penalizar fortemente as notas de DESEJO (máx 4) e AÇÃO (máx 3).
-- Registrar no comentário de aida_desejo: "Cliente questionou legitimidade múltiplas vezes — credibilidade comprometida."
+- Registrar no comentário de venda_necessidade: "Cliente questionou legitimidade múltiplas vezes — credibilidade comprometida."
 - Aumentar risco_quebra em pelo menos 20 pontos adicionais.
 - chance_pagamento deve refletir a baixa credibilidade (reduzir em pelo menos 25 pontos).
 
@@ -254,22 +255,22 @@ const ANALYSIS_SCHEMA = {
   pontos_fortes: { type: "array", items: { type: "string" }, description: "Lista de pontos fortes do operador" },
   pontos_melhorar: { type: "array", items: { type: "string" }, description: "Lista de pontos a melhorar" },
   sugestoes: { type: "array", items: { type: "string" }, description: "Sugestões práticas de melhoria" },
-  aida_atencao: {
+  venda_validacao: {
     type: "object",
     properties: { nota: { type: "number" }, comentario: { type: "string" } },
     required: ["nota", "comentario"],
   },
-  aida_interesse: {
+  venda_exploracao: {
     type: "object",
     properties: { nota: { type: "number" }, comentario: { type: "string" } },
     required: ["nota", "comentario"],
   },
-  aida_desejo: {
+  venda_necessidade: {
     type: "object",
     properties: { nota: { type: "number" }, comentario: { type: "string" } },
     required: ["nota", "comentario"],
   },
-  aida_acao: {
+  venda_acao: {
     type: "object",
     properties: { nota: { type: "number" }, comentario: { type: "string" } },
     required: ["nota", "comentario"],
@@ -314,7 +315,7 @@ const ANALYSIS_SCHEMA = {
 
 const REQUIRED_FIELDS: (keyof AIAnalysisResult)[] = [
   "resumo", "pontos_fortes", "pontos_melhorar", "sugestoes",
-  "aida_atencao", "aida_interesse", "aida_desejo", "aida_acao",
+  "venda_validacao", "venda_exploracao", "venda_necessidade", "venda_demonstracao", "venda_acao",
   "tecnica_usada", "objecao", "tom_operador", "risco_quebra",
   "chance_pagamento", "erro_principal", "mensagem_ideal", "nota_qa",
   "nivel_habilidade", "conformidade", "justificativa_conformidade", "score",
@@ -647,10 +648,11 @@ const OPUS_SYSTEM_PROMPT = `Avalie a negociação de cobrança. JSON apenas. Sem
 // Minimal schema: only fields essential for Opus analysis
 const OPUS_ANALYSIS_SCHEMA = {
   resumo: { type: "string", description: "Veredito em 1 frase" },
-  aida_atencao: { type: "number", description: "Nota AIDA Atenção 0-10" },
-  aida_interesse: { type: "number", description: "Nota AIDA Interesse 0-10" },
-  aida_desejo: { type: "number", description: "Nota AIDA Desejo 0-10" },
-  aida_acao: { type: "number", description: "Nota AIDA Ação 0-10" },
+  venda_validacao: { type: "number", description: "Nota VENDA Validação 0-10" },
+  venda_exploracao: { type: "number", description: "Nota VENDA Exploração 0-10" },
+  venda_necessidade: { type: "number", description: "Nota VENDA Necessidade 0-10" },
+  venda_demonstracao: { type: "number", description: "Nota VENDA Demonstração 0-10" },
+  venda_acao: { type: "number", description: "Nota VENDA Ação 0-10" },
   erro_principal: { type: "string", description: "Erro principal, máx 10 palavras" },
   objecao: { type: "string", description: "Objeção principal do cliente, máx 10 palavras" },
   categoria_objecao: { type: "string", description: "Categoria objeção, máx 3 palavras CAIXA ALTA" },
@@ -683,10 +685,11 @@ function expandOpusResult(compact: Record<string, unknown>): AIAnalysisResult {
     pontos_fortes: [],
     pontos_melhorar: [],
     sugestoes: [],
-    aida_atencao: { nota: Number(compact.aida_atencao) || 0, comentario: "" },
-    aida_interesse: { nota: Number(compact.aida_interesse) || 0, comentario: "" },
-    aida_desejo: { nota: Number(compact.aida_desejo) || 0, comentario: "" },
-    aida_acao: { nota: Number(compact.aida_acao) || 0, comentario: "" },
+    venda_validacao: { nota: Number(compact.venda_validacao) || 0, comentario: "" },
+    venda_exploracao: { nota: Number(compact.venda_exploracao) || 0, comentario: "" },
+    venda_necessidade: { nota: Number(compact.venda_necessidade) || 0, comentario: "" },
+    venda_demonstracao: { nota: Number(compact.venda_demonstracao) || 0, comentario: "" },
+    venda_acao: { nota: Number(compact.venda_acao) || 0, comentario: "" },
     tecnica_usada: "",
     objecao: String(compact.objecao || ""),
     tom_operador: "",
@@ -964,7 +967,7 @@ serve(async (req) => {
 
     // Only founder can override provider; ignore for all other users
     const isFounder = user.email === FOUNDER_EMAIL;
-    let aiProvider = (isFounder && pendingProvider ? pendingProvider : Deno.env.get("AI_PROVIDER") || "gemini").toLowerCase();
+    let aiProvider = (isFounder && pendingProvider ? pendingProvider : Deno.env.get("AI_PROVIDER") || "openai").toLowerCase();
     let model: string;
     let aiApiKey: string;
 
@@ -1237,11 +1240,11 @@ ${finalTranscricao}`;
         pontos_fortes: analysis.pontos_fortes,
         pontos_melhorar: analysis.pontos_melhorar,
         sugestoes: analysis.sugestoes,
-        aida_atencao: analysis.aida_atencao,
-        aida_interesse: analysis.aida_interesse,
-        aida_desejo: analysis.aida_desejo,
+        venda_validacao: analysis.venda_validacao,
+        venda_exploracao: analysis.venda_exploracao,
+        venda_necessidade: analysis.venda_necessidade,
         
-        aida_acao: analysis.aida_acao,
+        venda_acao: analysis.venda_acao,
         tecnica_usada: analysis.tecnica_usada,
         objecao: analysis.objecao,
         tom_operador: analysis.tom_operador,

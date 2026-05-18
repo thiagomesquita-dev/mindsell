@@ -45,21 +45,21 @@ const OBJECTION_CATEGORIES: Record<string, { label: string; color: string; subca
 
 const ALL_CATEGORIES = Object.keys(OBJECTION_CATEGORIES);
 
-// ── AIDA response scripts per category ──
+// ── VENDA response scripts per category ──
 const OBJECTION_SCRIPTS: Record<string, {
   leitura: string;
   erroComum: string;
-  scriptAida: { atencao: string; interesse: string; desejo: string; acao: string };
+  scriptVenda: { validacao: string; exploracao: string; necessidade: string; demonstracao: string; acao: string };
   variacoes: string[];
   gatilho: string;
 }> = {
   Financeira: {
     leitura: "O cliente alega incapacidade financeira. Pode ser real ou uma defesa automática para evitar compromisso.",
     erroComum: "Aceitar a objeção rápido demais, reforçar a dificuldade do cliente ou oferecer desconto antes de entender a real condição de pagamento.",
-    scriptAida: {
-      atencao: "Entendo. Me fala com sinceridade: essa pendência hoje te preocupa ou só não é o melhor momento pra resolver?",
-      interesse: "O ponto é que, quanto mais isso fica em aberto, mais essa situação pesa pra você. Por isso, o ideal é a gente encontrar uma forma que caiba de verdade no seu orçamento.",
-      desejo: "Se eu conseguir ajustar uma condição dentro da sua realidade, você já começa a resolver isso sem deixar o problema crescer.",
+    scriptVenda: {
+      validacao: "Entendo. Me fala com sinceridade: essa pendência hoje te preocupa ou só não é o melhor momento pra resolver?",
+      exploracao: "O ponto é que, quanto mais isso fica em aberto, mais essa situação pesa pra você. Por isso, o ideal é a gente encontrar uma forma que caiba de verdade no seu orçamento.",
+      necessidade: "Se eu conseguir ajustar uma condição dentro da sua realidade, você já começa a resolver isso sem deixar o problema crescer.",
       acao: "Pra eu não te passar nada fora da sua condição, qual valor você conseguiria assumir de entrada e em qual data ficaria mais viável pra você?",
     },
     variacoes: [
@@ -73,10 +73,10 @@ const OBJECTION_SCRIPTS: Record<string, {
   Tempo: {
     leitura: "O cliente posterga a decisão. Geralmente isso indica falta de urgência, tentativa de adiar a conversa ou desejo de evitar confronto.",
     erroComum: "Aceitar o adiamento de forma passiva, sem transformar a fala do cliente em data concreta, compromisso real ou senso de consequência.",
-    scriptAida: {
-      atencao: "Perfeito, eu entendo que talvez agora não seja o melhor momento. Mas antes de deixar isso pra depois, preciso alinhar uma coisa importante com você.",
-      interesse: "O que costuma acontecer é que, quando isso vai sendo adiado, a pendência continua em aberto e a condição de hoje pode não ser a mesma depois.",
-      desejo: "Se a gente já deixar isso alinhado agora, você evita esquecer, evita novo desgaste e já resolve da forma mais organizada.",
+    scriptVenda: {
+      validacao: "Perfeito, eu entendo que talvez agora não seja o melhor momento. Mas antes de deixar isso pra depois, preciso alinhar uma coisa importante com você.",
+      exploracao: "O que costuma acontecer é que, quando isso vai sendo adiado, a pendência continua em aberto e a condição de hoje pode não ser a mesma depois.",
+      necessidade: "Se a gente já deixar isso alinhado agora, você evita esquecer, evita novo desgaste e já resolve da forma mais organizada.",
       acao: "Me fala só uma coisa: qual é a data real em que você consegue avançar com isso? Assim eu já deixo alinhado da forma certa.",
     },
     variacoes: [
@@ -90,10 +90,10 @@ const OBJECTION_SCRIPTS: Record<string, {
   Confiança: {
     leitura: "O cliente desconfia da legitimidade da cobrança, do canal ou da empresa. Pode ter histórico de fraude ou simplesmente não reconhece o contato.",
     erroComum: "Ficar na defensiva, pressionar o cliente ou ignorar a preocupação sem antes validar e construir credibilidade com informações concretas.",
-    scriptAida: {
-      atencao: "Entendo totalmente sua preocupação, e é importante mesmo que você questione. Deixa eu te explicar exatamente quem eu sou e por que estou entrando em contato.",
-      interesse: "Eu consigo confirmar dados parciais seus pra você ter segurança de que esse contato é legítimo. Também posso te orientar a consultar diretamente no site do credor.",
-      desejo: "Resolver por aqui evita que você precise se deslocar ou passar por processos mais demorados. E tudo fica registrado e documentado.",
+    scriptVenda: {
+      validacao: "Entendo totalmente sua preocupação, e é importante mesmo que você questione. Deixa eu te explicar exatamente quem eu sou e por que estou entrando em contato.",
+      exploracao: "Eu consigo confirmar dados parciais seus pra você ter segurança de que esse contato é legítimo. Também posso te orientar a consultar diretamente no site do credor.",
+      necessidade: "Resolver por aqui evita que você precise se deslocar ou passar por processos mais demorados. E tudo fica registrado e documentado.",
       acao: "Quer que eu confirme seus dados parciais agora pra você ter certeza? Depois a gente vê a melhor forma de resolver.",
     },
     variacoes: [
@@ -107,10 +107,10 @@ const OBJECTION_SCRIPTS: Record<string, {
   Emocional: {
     leitura: "O cliente está fragilizado emocionalmente — pode estar passando por dificuldades pessoais, de saúde ou familiares. Precisa de acolhimento antes de qualquer proposta.",
     erroComum: "Ignorar o estado emocional do cliente e ir direto para valores e condições, ou usar a fragilidade como argumento de pressão.",
-    scriptAida: {
-      atencao: "Sinto muito pelo que você está passando. Antes de falar sobre qualquer valor, quero entender como posso te ajudar da melhor forma.",
-      interesse: "Existem condições diferenciadas justamente pra situações como a sua. O importante é a gente encontrar algo que não te sobrecarregue ainda mais.",
-      desejo: "Resolver essa pendência pode ser uma preocupação a menos no meio de tudo que você está enfrentando. E a gente faz isso no seu ritmo.",
+    scriptVenda: {
+      validacao: "Sinto muito pelo que você está passando. Antes de falar sobre qualquer valor, quero entender como posso te ajudar da melhor forma.",
+      exploracao: "Existem condições diferenciadas justamente pra situações como a sua. O importante é a gente encontrar algo que não te sobrecarregue ainda mais.",
+      necessidade: "Resolver essa pendência pode ser uma preocupação a menos no meio de tudo que você está enfrentando. E a gente faz isso no seu ritmo.",
       acao: "Me conta: qual seria um valor mensal que não comprometeria você nesse momento? A gente parte daí.",
     },
     variacoes: [
@@ -124,10 +124,10 @@ const OBJECTION_SCRIPTS: Record<string, {
   Contestação: {
     leitura: "O cliente questiona a existência, a validade ou a propriedade da dívida. Pode ser um caso legítimo ou uma estratégia de evasão.",
     erroComum: "Confrontar o cliente, insistir que a dívida existe sem apresentar evidências, ou ignorar a contestação sem investigar os detalhes.",
-    scriptAida: {
-      atencao: "Entendo. É importante que tudo esteja correto. Vou verificar com você ponto a ponto pra esclarecer qualquer dúvida.",
-      interesse: "Consigo te mostrar a origem da pendência, o contrato e os detalhes. Assim você tem clareza total antes de qualquer decisão.",
-      desejo: "Mesmo que exista dúvida, deixar isso resolvido agora evita que continue impactando seu nome e gera tranquilidade pra você.",
+    scriptVenda: {
+      validacao: "Entendo. É importante que tudo esteja correto. Vou verificar com você ponto a ponto pra esclarecer qualquer dúvida.",
+      exploracao: "Consigo te mostrar a origem da pendência, o contrato e os detalhes. Assim você tem clareza total antes de qualquer decisão.",
+      necessidade: "Mesmo que exista dúvida, deixar isso resolvido agora evita que continue impactando seu nome e gera tranquilidade pra você.",
       acao: "Qual parte exatamente você não reconhece? Me conta pra eu verificar aqui e te dar uma resposta concreta.",
     },
     variacoes: [
@@ -152,13 +152,13 @@ function normalizeCategory(raw: string | null | undefined): string | null {
   return null;
 }
 
-// ── AIDA stage from analysis ──
-function getWeakestAidaStage(a: any): string {
+// ── VENDA stage from analysis ──
+function getWeakestVendaStage(a: any): string {
   const stages = [
-    { name: "Atenção", val: (a.aida_atencao as any)?.nota ?? 10 },
-    { name: "Interesse", val: (a.aida_interesse as any)?.nota ?? 10 },
-    { name: "Desejo", val: (a.aida_desejo as any)?.nota ?? 10 },
-    { name: "Ação", val: (a.aida_acao as any)?.nota ?? 10 },
+    { name: "Validação", val: (a.venda_validacao as any)?.nota ?? 10 },
+    { name: "Exploração", val: (a.venda_exploracao as any)?.nota ?? 10 },
+    { name: "Necessidade", val: (a.venda_necessidade as any)?.nota ?? 10 },
+    { name: "Ação", val: (a.venda_acao as any)?.nota ?? 10 },
   ];
   return stages.reduce((min, s) => (s.val < min.val ? s : min), stages[0]).name;
 }
@@ -186,7 +186,7 @@ export default function ObjectionMap() {
     queryFn: async () => {
       let query = supabase
         .from("analyses")
-        .select("operador, carteira, categoria_objecao, objecao, chance_pagamento, aida_atencao, aida_interesse, aida_desejo, aida_acao, score")
+        .select("operador, carteira, categoria_objecao, objecao, chance_pagamento, venda_validacao, venda_exploracao, venda_necessidade, venda_demonstracao, venda_acao, score")
         .not("categoria_objecao", "is", null);
 
       if (empresaFilter) {
@@ -246,7 +246,7 @@ export default function ObjectionMap() {
 
       entry.operators[a.operador] = (entry.operators[a.operador] || 0) + 1;
 
-      const stage = getWeakestAidaStage(a);
+      const stage = getWeakestVendaStage(a);
       entry.aidaStages[stage] = (entry.aidaStages[stage] || 0) + 1;
 
       // Map raw objection text to subcategory
@@ -430,7 +430,7 @@ export default function ObjectionMap() {
                         <TableHead className="text-center">% do Total</TableHead>
                         <TableHead className="text-center">Conversão</TableHead>
                         <TableHead className="text-center">Chance Média</TableHead>
-                        <TableHead>Etapa AIDA Fraca</TableHead>
+                        <TableHead>Etapa VENDA Fraca</TableHead>
                         <TableHead>Operador + Exposto</TableHead>
                         <TableHead className="text-center">Saúde</TableHead>
                       </TableRow>
@@ -487,7 +487,7 @@ export default function ObjectionMap() {
             {/* ═══ TAB: Scripts ═══ */}
             <TabsContent value="scripts" className="space-y-6">
               <p className="text-sm text-muted-foreground">
-                Scripts de resposta estruturados em AIDA para cada categoria de objeção. Use para treinamento e orientação da equipe.
+                Scripts de resposta estruturados em VENDA para cada categoria de objeção. Use para treinamento e orientação da equipe.
               </p>
               {objectionStats.map((s) => {
                 const script = OBJECTION_SCRIPTS[s.category];
@@ -516,20 +516,20 @@ export default function ObjectionMap() {
                         <p className="text-sm text-foreground mt-2 leading-relaxed">{script.erroComum}</p>
                       </div>
 
-                      {/* AIDA Script */}
+                      {/* VENDA Script */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {(["atencao", "interesse", "desejo", "acao"] as const).map((stage) => {
-                          const labels: Record<string, string> = { atencao: "Atenção", interesse: "Interesse", desejo: "Desejo", acao: "Ação" };
+                        {(["validacao", "exploracao", "necessidade", "acao"] as const).map((stage) => {
+                          const labels: Record<string, string> = { validacao: "Validação", exploracao: "Exploração", necessidade: "Necessidade", acao: "Ação" };
                           const colors: Record<string, string> = {
-                            atencao: "border-blue-500/30 bg-blue-500/5",
-                            interesse: "border-amber-500/30 bg-amber-500/5",
-                            desejo: "border-purple-500/30 bg-purple-500/5",
+                            validacao: "border-blue-500/30 bg-blue-500/5",
+                            exploracao: "border-amber-500/30 bg-amber-500/5",
+                            necessidade: "border-purple-500/30 bg-purple-500/5",
                             acao: "border-emerald-500/30 bg-emerald-500/5",
                           };
                           return (
                             <div key={stage} className={`border rounded-lg p-4 ${colors[stage]}`}>
                               <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">{labels[stage]}</p>
-                              <p className="text-sm text-foreground leading-relaxed italic">"{script.scriptAida[stage]}"</p>
+                              <p className="text-sm text-foreground leading-relaxed italic">"{script.scriptVenda[stage]}"</p>
                             </div>
                           );
                         })}

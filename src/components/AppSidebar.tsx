@@ -105,7 +105,7 @@ export function AppSidebar() {
           <div className="flex items-center gap-3">
             {!collapsed && (
               <h1 className="font-heading text-xl font-bold text-sidebar-foreground tracking-tight">
-                CobraMind
+                MindSell
               </h1>
             )}
           </div>

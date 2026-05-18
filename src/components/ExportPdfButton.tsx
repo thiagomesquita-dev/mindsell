@@ -246,7 +246,7 @@ function buildHtml(analysis: AnalysisData): string {
   </div>
 
   <div class="footer">
-    <span>Gerado por CobraMind</span>
+    <span>Gerado por MindSell</span>
     <span>${dataExport}</span>
   </div>
 

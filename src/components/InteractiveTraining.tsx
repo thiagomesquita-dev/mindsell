@@ -290,7 +290,7 @@ export function InteractiveTraining({ training }: { training: TrainingData }) {
       <div>
         <div className="flex items-center gap-2 mb-2">
           <MessageSquareText className="h-4 w-4 text-primary" />
-          <h4 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Script Ideal (AIDA)</h4>
+          <h4 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Script Ideal (VENDA)</h4>
         </div>
         <div className="bg-success/10 rounded-lg p-4 border-l-4 border-success italic text-sm text-foreground/90">
           "{training.script_ideal}"

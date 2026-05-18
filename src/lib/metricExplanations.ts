@@ -33,15 +33,15 @@ export const metricExplanations: Record<string, MetricExplanation> = {
   },
   qualidadeMedia: {
     tooltip:
-      "Qualidade geral das negociações com base na metodologia AIDA:\n• Atenção (abertura e conexão)\n• Interesse (clareza da explicação)\n• Desejo (tratamento de objeções)\n• Ação (fechamento e compromisso)",
+      "Qualidade geral das negociações com base na metodologia VENDA:\n• Validação do contexto\n• Exploração da dor\n• Necessidade e impacto\n• Ação e próximo passo",
     title: "Como calculamos a Qualidade Média",
     description:
-      "A qualidade é calculada pela média ponderada das quatro etapas da metodologia AIDA, avaliando a condução completa da negociação.",
+      "A qualidade é calculada pela média ponderada das quatro etapas da metodologia VENDA, avaliando a condução completa da negociação.",
     weights: [
-      { label: "Atenção (abertura e conexão)", weight: "25%" },
+      { label: "Validação do contexto", weight: "25%" },
       { label: "Interesse (clareza da proposta)", weight: "25%" },
-      { label: "Desejo (tratamento de objeções)", weight: "25%" },
-      { label: "Ação (fechamento e compromisso)", weight: "25%" },
+      { label: "Necessidade e impacto", weight: "25%" },
+      { label: "Ação e próximo passo", weight: "25%" },
     ],
   },
   score: {

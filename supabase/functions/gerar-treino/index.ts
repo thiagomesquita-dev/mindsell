@@ -45,10 +45,11 @@ interface TrainingRequest {
   erro_principal: string | null;
   objecao: string | null;
   resumo: string | null;
-  aida_atencao: unknown;
-  aida_interesse: unknown;
-  aida_desejo: unknown;
-  aida_acao: unknown;
+  venda_validacao: unknown;
+  venda_exploracao: unknown;
+  venda_necessidade: unknown;
+  venda_demonstracao: unknown;
+  venda_acao: unknown;
   operador: string;
   carteira: string;
   analysis_id?: string;
@@ -165,10 +166,11 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
     const aidaSummary = [
-      body.aida_atencao ? `Atenção: ${JSON.stringify(body.aida_atencao)}` : null,
-      body.aida_interesse ? `Interesse: ${JSON.stringify(body.aida_interesse)}` : null,
-      body.aida_desejo ? `Desejo: ${JSON.stringify(body.aida_desejo)}` : null,
-      body.aida_acao ? `Ação: ${JSON.stringify(body.aida_acao)}` : null,
+      body.venda_validacao ? `Validação: ${JSON.stringify(body.venda_validacao)}` : null,
+      body.venda_exploracao ? `Exploração: ${JSON.stringify(body.venda_exploracao)}` : null,
+      body.venda_necessidade ? `Necessidade: ${JSON.stringify(body.venda_necessidade)}` : null,
+      body.venda_demonstracao ? `Demonstração: ${JSON.stringify(body.venda_demonstracao)}` : null,
+      body.venda_acao ? `Ação: ${JSON.stringify(body.venda_acao)}` : null,
     ].filter(Boolean).join("\n");
 
     const objectionType = classifyObjection(body.objecao);

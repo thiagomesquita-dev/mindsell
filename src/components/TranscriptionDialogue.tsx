@@ -268,7 +268,7 @@ function NeutralBubble({ line, onTimestampClick }: { line: AudioBlock; onTimesta
 
 // ─── Plain text view for pasted conversations (WhatsApp / Agendor) ───
 
-const HIGHLIGHT_OPERATOR_REGEX = /\b(atendente|operador|atendimento|agente|cobrador|consultor|negociador|assessor|suporte|cobrança|cobranca)\b/i;
+const HIGHLIGHT_OPERATOR_REGEX = /\b(atendente|operador|atendimento|agente|cobrador|consultor|negociador|assessor|suporte|vendas|cobranca)\b/i;
 const HIGHLIGHT_PHONE_REGEX = /[\s+\d\(\)\-]{7,}/;
 
 function classifyLine(line: string): "operador" | "cliente" | null {

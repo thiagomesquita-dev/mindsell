@@ -24,45 +24,47 @@ function formatBRL(v: number): string {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-type AlertLevel = "critico" | "atencao" | "saudavel";
+type AlertLevel = "critico" | "validacao" | "saudavel";
 
 function alertBadge(level: AlertLevel) {
   if (level === "critico")
     return <Badge className="bg-destructive/15 text-destructive border-destructive/30">Crítico</Badge>;
-  if (level === "atencao")
+  if (level === "validacao")
     return <Badge className="bg-yellow-500/15 text-yellow-500 border-yellow-500/30">Atenção</Badge>;
   return <Badge className="bg-emerald-500/15 text-emerald-500 border-emerald-500/30">Saudável</Badge>;
 }
 
 function alertBorder(level: AlertLevel) {
   if (level === "critico") return "border-destructive/30 bg-destructive/5";
-  if (level === "atencao") return "border-yellow-500/30 bg-yellow-500/5";
+  if (level === "validacao") return "border-yellow-500/30 bg-yellow-500/5";
   return "border-emerald-500/30 bg-emerald-500/5";
 }
 
-function extractAidaNota(aida: unknown): number {
+function extractVendaNota(aida: unknown): number {
   if (!aida || typeof aida !== "object") return 0;
   return Number((aida as Record<string, unknown>).nota ?? 0);
 }
 
-function aidaColorClass(score: number) {
+function vendaColorClass(score: number) {
   if (score >= 7.5) return "text-emerald-500";
   if (score >= 6) return "text-yellow-500";
   return "text-destructive";
 }
 
-const AIDA_LABELS: Record<string, string> = {
-  atencao: "Atenção",
-  interesse: "Interesse",
-  desejo: "Desejo",
+const VENDA_LABELS: Record<string, string> = {
+  validacao: "Validação",
+  exploracao: "Exploração",
+  necessidade: "Necessidade",
+  demonstracao: "Demonstração",
   acao: "Ação",
 };
 
-const AIDA_DESCRIPTIONS: Record<string, string> = {
-  atencao: "Abertura, identificação e contexto",
-  interesse: "Ancoragem, economia e escolha guiada",
-  desejo: "Empatia, personalização e objeções",
-  acao: "Fechamento, confirmação e encaminhamento",
+const VENDA_DESCRIPTIONS: Record<string, string> = {
+  validacao: "Validação de contexto e conexão inicial",
+  exploracao: "Exploração da dor e mapeamento de necessidades",
+  necessidade: "Conexão entre solução, necessidade e impacto",
+  demonstracao: "Demonstração de valor e argumentação concreta",
+  acao: "Encaminhamento e confirmação do próximo passo",
 };
 
 // ─── Types ───────────────────────────────────────────────────
@@ -70,9 +72,10 @@ interface OperatorAgg {
   nome: string;
   qualidadeMedia: number;
   chanceMedia: number;
-  atencao: number;
-  interesse: number;
-  desejo: number;
+  validacao: number;
+  exploracao: number;
+  necessidade: number;
+  demonstracao: number;
   acao: number;
   valorPago: number;
   count: number;
@@ -102,7 +105,7 @@ export default function FinancialAnalysis() {
     queryFn: async () => {
       let query = supabase
         .from("analyses")
-        .select("operador, carteira, score, chance_pagamento, aida_atencao, aida_interesse, aida_desejo, aida_acao, created_at")
+        .select("operador, carteira, score, chance_pagamento, venda_validacao, venda_exploracao, venda_necessidade, venda_demonstracao, venda_acao, created_at")
         .order("created_at", { ascending: false });
 
       if (empresaFilter) {
@@ -153,7 +156,7 @@ export default function FinancialAnalysis() {
     for (const op of ops) {
       map.set(op.nome, {
         nome: op.nome, tScore: 0, tChance: 0,
-        tA: 0, tI: 0, tD: 0, tAc: 0,
+        tV: 0, tE: 0, tN: 0, tDem: 0, tAc: 0,
         count: 0, valorPago: Number(op.valor_pago_periodo) || 0,
       });
     }
@@ -163,10 +166,11 @@ export default function FinancialAnalysis() {
       if (!e) continue;
       e.tScore += Number(a.score) || 0;
       e.tChance += Number(a.chance_pagamento) || 0;
-      e.tA += extractAidaNota(a.aida_atencao);
-      e.tI += extractAidaNota(a.aida_interesse);
-      e.tD += extractAidaNota(a.aida_desejo);
-      e.tAc += extractAidaNota(a.aida_acao);
+      e.tV += extractVendaNota(a.venda_validacao);
+      e.tE += extractVendaNota(a.venda_exploracao);
+      e.tN += extractVendaNota(a.venda_necessidade);
+      e.tDem += extractVendaNota(a.venda_demonstracao);
+      e.tAc += extractVendaNota(a.venda_acao);
       e.count += 1;
     }
 
@@ -224,17 +228,17 @@ export default function FinancialAnalysis() {
       return {
         nome: o.nome, chancePrevista: chancePrev, shareReal, gap, valorPago: o.valorPago,
         conversaoPor100,
-        level: (gap <= -20 ? "critico" : gap <= -10 ? "atencao" : "saudavel") as AlertLevel,
+        level: (gap <= -20 ? "critico" : gap <= -10 ? "validacao" : "saudavel") as AlertLevel,
       };
     }).sort((a, b) => a.gap - b.gap);
   }, [filtered, ops]);
 
-  // ── Weakest AIDA stage per operator ──
-  function weakestAida(o: OperatorAgg): { stage: string; score: number } {
+  // ── Weakest VENDA stage per operator ──
+  function weakestVenda(o: OperatorAgg): { stage: string; score: number } {
     const stages = [
-      { stage: "atencao", score: o.atencao },
-      { stage: "interesse", score: o.interesse },
-      { stage: "desejo", score: o.desejo },
+      { stage: "validacao", score: o.atencao },
+      { stage: "exploracao", score: o.interesse },
+      { stage: "necessidade", score: o.desejo },
       { stage: "acao", score: o.acao },
     ];
     return stages.reduce((min, s) => s.score < min.score ? s : min, stages[0]);
@@ -245,7 +249,7 @@ export default function FinancialAnalysis() {
     const cards: InsightCard[] = [];
 
     for (const o of filtered) {
-      const weak = weakestAida(o);
+      const weak = weakestVenda(o);
 
       // High chance + low financial result
       if (o.chanceMedia >= 60 && o.valorPago > 0 && o.valorPago < avgPago * 0.6) {
@@ -255,7 +259,7 @@ export default function FinancialAnalysis() {
           operador: o.nome,
           problema: `Chance de pagamento prevista de ${o.chanceMedia.toFixed(0)}%, mas resultado financeiro de apenas ${formatBRL(o.valorPago)} — ${((o.valorPago / avgPago) * 100).toFixed(0)}% da média da equipe.`,
           impacto: `Perda estimada de ${formatBRL(potencial - o.valorPago)} neste período. A cada 100 negociações, a previsão indica ${o.chanceMedia.toFixed(0)} conversões, mas o resultado sugere um número significativamente menor.`,
-          acao: `Priorizar acompanhamento de fechamento. A etapa mais fraca do AIDA é "${AIDA_LABELS[weak.stage]}" (${weak.score.toFixed(1)}/10) — ${AIDA_DESCRIPTIONS[weak.stage]}. Realizar sessão de coaching focada nesta etapa.`,
+          acao: `Priorizar acompanhamento de fechamento. A etapa mais fraca do VENDA é "${VENDA_LABELS[weak.stage]}" (${weak.score.toFixed(1)}/10) — ${VENDA_DESCRIPTIONS[weak.stage]}. Realizar sessão de coaching focada nesta etapa.`,
           perdaEstimada: potencial - o.valorPago,
         });
       }
@@ -263,7 +267,7 @@ export default function FinancialAnalysis() {
       // High chance + no financial data
       if (o.chanceMedia >= 60 && o.valorPago === 0 && hasFinancialData) {
         cards.push({
-          level: "atencao",
+          level: "validacao",
           operador: o.nome,
           problema: `Chance prevista de ${o.chanceMedia.toFixed(0)}%, mas sem dados financeiros importados para validação.`,
           impacto: `Não é possível medir a efetividade real deste operador. As previsões comportamentais não podem ser validadas sem o cruzamento financeiro.`,
@@ -274,7 +278,7 @@ export default function FinancialAnalysis() {
       // Low quality + high financial result (anomaly)
       if (o.qualidadeMedia < 5.5 && o.valorPago > avgPago * 1.2) {
         cards.push({
-          level: "atencao",
+          level: "validacao",
           operador: o.nome,
           problema: `Qualidade abaixo do padrão (${o.qualidadeMedia.toFixed(1)}/10), mas resultado financeiro acima da média (${formatBRL(o.valorPago)}).`,
           impacto: `Anomalia positiva: o operador pode estar utilizando uma abordagem efetiva não capturada pela análise comportamental, ou o resultado pode ser pontual e não sustentável.`,
@@ -315,7 +319,7 @@ export default function FinancialAnalysis() {
         level: "saudavel",
         problema: "Nenhuma inconsistência crítica detectada entre previsão comportamental e resultado financeiro.",
         impacto: "A equipe está operando dentro do padrão esperado. Continue monitorando para identificar tendências.",
-        acao: "Manter acompanhamento regular. Definir metas de melhoria incremental com base nos indicadores AIDA.",
+        acao: "Manter acompanhamento regular. Definir metas de melhoria incremental com base nos indicadores VENDA.",
       });
     }
 
@@ -325,8 +329,8 @@ export default function FinancialAnalysis() {
     });
   }, [filtered, avgPago, hasFinancialData, totalPago]);
 
-  // ── AIDA Financial ──
-  const aidaFinancial = useMemo(() => {
+  // ── VENDA Financial ──
+  const vendaFinancial = useMemo(() => {
     if (filtered.length === 0) return null;
     const t = filtered.reduce(
       (acc, o) => ({
@@ -341,9 +345,9 @@ export default function FinancialAnalysis() {
     if (t.tp === 0) return null;
 
     const stages = [
-      { key: "atencao", score: t.a / t.tp },
-      { key: "interesse", score: t.i / t.tp },
-      { key: "desejo", score: t.d / t.tp },
+      { key: "validacao", score: t.a / t.tp },
+      { key: "exploracao", score: t.i / t.tp },
+      { key: "necessidade", score: t.d / t.tp },
       { key: "acao", score: t.ac / t.tp },
     ];
     const weakest = stages.reduce((min, s) => s.score < min.score ? s : min, stages[0]);
@@ -420,13 +424,13 @@ export default function FinancialAnalysis() {
             </h2>
             <div className="space-y-4">
               {insights.map((ins, i) => (
-                <Card key={i} className={`border-l-4 ${ins.level === "critico" ? "border-l-destructive" : ins.level === "atencao" ? "border-l-yellow-500" : "border-l-emerald-500"}`}>
+                <Card key={i} className={`border-l-4 ${ins.level === "critico" ? "border-l-destructive" : ins.level === "validacao" ? "border-l-yellow-500" : "border-l-emerald-500"}`}>
                   <CardContent className="p-5 space-y-4">
                     {/* Header */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         {ins.level === "critico" && <ShieldAlert className="h-5 w-5 text-destructive" />}
-                        {ins.level === "atencao" && <AlertTriangle className="h-5 w-5 text-yellow-500" />}
+                        {ins.level === "validacao" && <AlertTriangle className="h-5 w-5 text-yellow-500" />}
                         {ins.level === "saudavel" && <CheckCircle2 className="h-5 w-5 text-emerald-500" />}
                         {ins.operador && <span className="font-heading font-semibold">{ins.operador}</span>}
                         {alertBadge(ins.level)}
@@ -467,22 +471,22 @@ export default function FinancialAnalysis() {
             </div>
           </section>
 
-          {/* ── 2. AIDA Financeiro ── */}
-          {aidaFinancial && (
+          {/* ── 2. VENDA Financeiro ── */}
+          {vendaFinancial && (
             <section>
               <h2 className="font-heading text-base font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-                AIDA Financeiro
+                VENDA Financeiro
               </h2>
               <p className="text-sm text-muted-foreground mb-4">
                 Nota de cada etapa da negociação ponderada pelo valor financeiro recuperado.
               </p>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                {aidaFinancial.stages.map((item) => (
-                  <Card key={item.key} className={item.key === aidaFinancial.weakest.key ? "ring-2 ring-destructive/30" : ""}>
+                {vendaFinancial.stages.map((item) => (
+                  <Card key={item.key} className={item.key === vendaFinancial.weakest.key ? "ring-2 ring-destructive/30" : ""}>
                     <CardContent className="p-4 text-center">
-                      <p className="text-sm text-muted-foreground mb-1">{AIDA_LABELS[item.key]}</p>
-                      <p className={`text-3xl font-heading font-bold ${aidaColorClass(item.score)}`}>
+                      <p className="text-sm text-muted-foreground mb-1">{VENDA_LABELS[item.key]}</p>
+                      <p className={`text-3xl font-heading font-bold ${vendaColorClass(item.score)}`}>
                         {item.score.toFixed(1)}
                       </p>
                       <p className="text-xs text-muted-foreground">/10</p>
@@ -494,7 +498,7 @@ export default function FinancialAnalysis() {
                       }`}>
                         {item.score >= 7.5 ? "Bom" : item.score >= 6 ? "Atenção" : "Crítico"}
                       </Badge>
-                      {item.key === aidaFinancial.weakest.key && (
+                      {item.key === vendaFinancial.weakest.key && (
                         <p className="text-[10px] text-destructive mt-1 font-medium">← Etapa mais fraca</p>
                       )}
                     </CardContent>
@@ -502,23 +506,23 @@ export default function FinancialAnalysis() {
                 ))}
               </div>
 
-              {/* AIDA interpretation */}
-              <Card className={alertBorder(aidaFinancial.weakest.score < 6 ? "critico" : aidaFinancial.weakest.score < 7.5 ? "atencao" : "saudavel")}>
+              {/* VENDA interpretation */}
+              <Card className={alertBorder(vendaFinancial.weakest.score < 6 ? "critico" : vendaFinancial.weakest.score < 7.5 ? "validacao" : "saudavel")}>
                 <CardContent className="p-4 space-y-2">
                   <div className="flex items-center gap-2">
                     <BookOpen className="h-4 w-4 text-primary" />
                     <p className="text-sm font-semibold">Interpretação</p>
                   </div>
                   <p className="text-sm">
-                    A etapa com maior impacto negativo na receita é <strong>{AIDA_LABELS[aidaFinancial.weakest.key]}</strong> ({aidaFinancial.weakest.score.toFixed(1)}/10)
-                    — {AIDA_DESCRIPTIONS[aidaFinancial.weakest.key]}.
-                    {aidaFinancial.weakest.score < 6
+                    A etapa com maior impacto negativo na receita é <strong>{VENDA_LABELS[vendaFinancial.weakest.key]}</strong> ({vendaFinancial.weakest.score.toFixed(1)}/10)
+                    — {VENDA_DESCRIPTIONS[vendaFinancial.weakest.key]}.
+                    {vendaFinancial.weakest.score < 6
                       ? " Esta nota crítica indica que a equipe precisa de treinamento imediato nesta etapa."
                       : " Melhorar esta etapa pode trazer o maior retorno financeiro incremental."
                     }
                   </p>
                   <p className="text-sm">
-                    A etapa mais forte é <strong>{AIDA_LABELS[aidaFinancial.strongest.key]}</strong> ({aidaFinancial.strongest.score.toFixed(1)}/10).
+                    A etapa mais forte é <strong>{VENDA_LABELS[vendaFinancial.strongest.key]}</strong> ({vendaFinancial.strongest.score.toFixed(1)}/10).
                     Utilizar como referência de boas práticas nos treinamentos.
                   </p>
                 </CardContent>
@@ -548,8 +552,8 @@ export default function FinancialAnalysis() {
                   </TableHeader>
                   <TableBody>
                     {ranking.map((o, i) => {
-                      const level: AlertLevel = o.qualidadeMedia >= 7.5 ? "saudavel" : o.qualidadeMedia >= 6 ? "atencao" : "critico";
-                      const weak = weakestAida(o);
+                      const level: AlertLevel = o.qualidadeMedia >= 7.5 ? "saudavel" : o.qualidadeMedia >= 6 ? "validacao" : "critico";
+                      const weak = weakestVenda(o);
                       return (
                         <TableRow key={o.nome}>
                           <TableCell className="font-bold text-muted-foreground">{i + 1}</TableCell>
@@ -560,7 +564,7 @@ export default function FinancialAnalysis() {
                           <TableCell className="text-right">{o.count}</TableCell>
                           <TableCell className="text-center">
                             <Badge variant="outline" className={`text-xs ${weak.score < 6 ? "border-destructive/30 text-destructive" : "border-yellow-500/30 text-yellow-500"}`}>
-                              {AIDA_LABELS[weak.stage]} ({weak.score.toFixed(1)})
+                              {VENDA_LABELS[weak.stage]} ({weak.score.toFixed(1)})
                             </Badge>
                           </TableCell>
                           <TableCell className="text-center">{alertBadge(level)}</TableCell>
@@ -640,8 +644,8 @@ export default function FinancialAnalysis() {
                     <p className="font-heading font-semibold text-sm">Foco de Treinamento</p>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    {aidaFinancial
-                      ? `Priorizar a etapa "${AIDA_LABELS[aidaFinancial.weakest.key]}" (${aidaFinancial.weakest.score.toFixed(1)}/10) — é a etapa com maior impacto na receita. ${AIDA_DESCRIPTIONS[aidaFinancial.weakest.key]}.`
+                    {vendaFinancial
+                      ? `Priorizar a etapa "${VENDA_LABELS[vendaFinancial.weakest.key]}" (${vendaFinancial.weakest.score.toFixed(1)}/10) — é a etapa com maior impacto na receita. ${VENDA_DESCRIPTIONS[vendaFinancial.weakest.key]}.`
                       : "Importe dados financeiros para identificar o foco de treinamento ideal."
                     }
                   </p>

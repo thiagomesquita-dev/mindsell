@@ -158,20 +158,20 @@ Deno.serve(async (req) => {
         const resend = new Resend(resendApiKey);
         const trimmedNome = (nome as string).trim();
         const trimmedEmail = (email as string).trim();
-        const loginUrl = "https://app.cobramind.ia.br/login";
+        const loginUrl = "https://app.mindsell.ia.br/login";
         const roleLabel = finalRole === "gestor" ? "Gestor(a)" : "Administrador(a)";
 
         const emailHtml = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
             <div style="text-align: center; margin-bottom: 30px;">
-              <h1 style="color: #1a1a2e; font-size: 24px; margin: 0;">CobraMind</h1>
+              <h1 style="color: #1a1a2e; font-size: 24px; margin: 0;">MindSell</h1>
               <p style="color: #6b7280; font-size: 14px; margin-top: 4px;">Inteligência em Cobrança</p>
             </div>
             
             <h2 style="color: #1a1a2e; font-size: 20px;">Bem-vindo(a), ${trimmedNome}!</h2>
             
             <p style="color: #374151; font-size: 15px; line-height: 1.6;">
-              Seu cadastro como <strong>${roleLabel}</strong> foi realizado com sucesso no CobraMind.
+              Seu cadastro como <strong>${roleLabel}</strong> foi realizado com sucesso no MindSell.
             </p>
 
             <div style="background: #f3f4f6; border-radius: 8px; padding: 16px; margin: 20px 0;">
@@ -188,12 +188,12 @@ Deno.serve(async (req) => {
             <div style="text-align: center; margin: 24px 0;">
               <a href="${loginUrl}" 
                  style="display: inline-block; background: #6366f1; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-size: 15px; font-weight: 600;">
-                Acessar CobraMind
+                Acessar MindSell
               </a>
             </div>
 
             <p style="color: #9ca3af; font-size: 12px; text-align: center; margin-top: 30px; border-top: 1px solid #e5e7eb; padding-top: 16px;">
-              Este e-mail foi enviado automaticamente pelo CobraMind.
+              Este e-mail foi enviado automaticamente pelo MindSell.
             </p>
           </div>
         `;
@@ -201,7 +201,7 @@ Deno.serve(async (req) => {
         const { error: resendErr } = await resend.emails.send({
           from: resendFromEmail,
           to: [trimmedEmail],
-          subject: `Bem-vindo ao CobraMind — ${company.nome_empresa}`,
+          subject: `Bem-vindo ao MindSell — ${company.nome_empresa}`,
           html: emailHtml,
         });
 

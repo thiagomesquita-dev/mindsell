@@ -247,7 +247,7 @@ export default function SupervisionGamification() {
               Como funciona o ranking?
             </h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              O ranking considera dois fatores principais: <strong>qualidade das análises (AIDA)</strong> e{" "}
+              O ranking considera dois fatores principais: <strong>qualidade das análises (VENDA)</strong> e{" "}
               <strong>volume de análises realizadas</strong>. A qualidade só tem peso total quando há volume
               suficiente. Supervisores com poucas análises têm sua nota ajustada automaticamente, evitando
               distorções no ranking. Isso garante que o ranking reflita <strong>consistência</strong>, não

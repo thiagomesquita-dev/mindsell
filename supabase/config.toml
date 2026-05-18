@@ -1,4 +1,4 @@
-project_id = "cocmjhgvlvpseloyeexr"
+project_id = "SEU_PROJECT_ID_AQUI"
 
 [functions.analisar-negociacao]
 verify_jwt = false
@@ -28,4 +28,22 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.cadastrar-gestor]
+verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.create-checkout-session]
+verify_jwt = false
+
+[functions.get-checkout-session]
+verify_jwt = false
+
+[functions.finalizar-onboarding]
+verify_jwt = false
+
+[functions.extrair-conversa-prints]
+verify_jwt = false
+
+[functions.sitemap]
 verify_jwt = false

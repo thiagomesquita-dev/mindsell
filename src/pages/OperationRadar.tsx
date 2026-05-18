@@ -88,11 +88,12 @@ type AnalysisRow = {
   score: number | null;
   chance_pagamento: number | null;
   risco_quebra: number | null;
-  aida_atencao: unknown;
-  aida_interesse: unknown;
-  aida_desejo: unknown;
-  aida_objecao: unknown;
-  aida_acao: unknown;
+  venda_validacao: unknown;
+  venda_exploracao: unknown;
+  venda_necessidade: unknown;
+  venda_demonstracao: unknown;
+  venda_objecao: unknown;
+  venda_acao: unknown;
   categoria_erro: string | null;
   categoria_objecao: string | null;
   conformidade: string | null;
@@ -101,10 +102,10 @@ type AnalysisRow = {
 };
 
 function computeRadarMetrics(items: AnalysisRow[]) {
-  const atencao = avg(items.map((a) => extractNota(a.aida_atencao)));
-  const interesse = avg(items.map((a) => extractNota(a.aida_interesse)));
-  const desejo = avg(items.map((a) => extractNota(a.aida_desejo)));
-  const acao = avg(items.map((a) => extractNota(a.aida_acao)));
+  const validacao = avg(items.map((a) => extractNota(a.venda_validacao)));
+  const exploracao = avg(items.map((a) => extractNota(a.venda_exploracao)));
+  const necessidade = avg(items.map((a) => extractNota(a.venda_necessidade)));
+  const acao = avg(items.map((a) => extractNota(a.venda_acao)));
   const investigacao = avg(items.map((a) => a.nota_qa));
   const fechamento = avg(items.map((a) => a.chance_pagamento));
   const conformes = items.filter((a) => a.conformidade === "Conforme").length;
@@ -189,7 +190,7 @@ export default function OperationRadar() {
     queryFn: async () => {
       let query = supabase
         .from("analyses")
-        .select("carteira, operador, score, chance_pagamento, risco_quebra, aida_atencao, aida_interesse, aida_desejo, aida_objecao, aida_acao, categoria_erro, categoria_objecao, conformidade, nota_qa, created_at");
+        .select("carteira, operador, score, chance_pagamento, risco_quebra, venda_validacao, venda_exploracao, venda_necessidade, venda_demonstracao, venda_objecao, venda_acao, categoria_erro, categoria_objecao, conformidade, nota_qa, created_at");
       if (empresaFilter) {
         query = query.eq("empresa_id", empresaFilter);
       }
@@ -220,10 +221,10 @@ export default function OperationRadar() {
   const currentKpis = useMemo(() => computeKpis(currentItems), [currentItems]);
   const prevKpis = useMemo(() => computeKpis(prevItems), [prevItems]);
 
-  const radarAidaData = useMemo(() => [
-    { subject: "Atenção", atual: currentMetrics.atencao, anterior: prevMetrics.atencao },
-    { subject: "Interesse", atual: currentMetrics.interesse, anterior: prevMetrics.interesse },
-    { subject: "Desejo", atual: currentMetrics.desejo, anterior: prevMetrics.desejo },
+  const radarVendaData = useMemo(() => [
+    { subject: "Atenção", atual: currentMetrics.validacao, anterior: prevMetrics.validacao },
+    { subject: "Interesse", atual: currentMetrics.exploracao, anterior: prevMetrics.exploracao },
+    { subject: "Desejo", atual: currentMetrics.necessidade, anterior: prevMetrics.necessidade },
     { subject: "Ação", atual: currentMetrics.acao, anterior: prevMetrics.acao },
   ], [currentMetrics, prevMetrics]);
 
@@ -237,10 +238,10 @@ export default function OperationRadar() {
     { label: "Score Médio", current: currentKpis.scoreMedio, prev: prevKpis.scoreMedio, suffix: "" },
     { label: "Prob. Pagamento", current: currentKpis.chancePagamento, prev: prevKpis.chancePagamento, suffix: "%" },
     { label: "Risco de Quebra", current: currentKpis.riscoQuebra, prev: prevKpis.riscoQuebra, suffix: "%", invertColor: true },
-    { label: "Atenção (AIDA)", current: currentMetrics.atencao, prev: prevMetrics.atencao, suffix: "" },
-    { label: "Interesse (AIDA)", current: currentMetrics.interesse, prev: prevMetrics.interesse, suffix: "" },
-    { label: "Desejo (AIDA)", current: currentMetrics.desejo, prev: prevMetrics.desejo, suffix: "" },
-    { label: "Ação (AIDA)", current: currentMetrics.acao, prev: prevMetrics.acao, suffix: "" },
+    { label: "Validação (VENDA)", current: currentMetrics.validacao, prev: prevMetrics.validacao, suffix: "" },
+    { label: "Exploração (VENDA)", current: currentMetrics.exploracao, prev: prevMetrics.exploracao, suffix: "" },
+    { label: "Necessidade (VENDA)", current: currentMetrics.necessidade, prev: prevMetrics.necessidade, suffix: "" },
+    { label: "Ação (VENDA)", current: currentMetrics.acao, prev: prevMetrics.acao, suffix: "" },
     { label: "Conformidade Legal", current: currentMetrics.conformidade, prev: prevMetrics.conformidade, suffix: "%" },
   ], [currentKpis, prevKpis, currentMetrics, prevMetrics]);
 
@@ -307,7 +308,7 @@ export default function OperationRadar() {
       .catch(() => { if (!cancelled) setDiagnostico("Não foi possível gerar o diagnóstico automático."); })
       .finally(() => { if (!cancelled) setDiagLoading(false); });
     return () => { cancelled = true; };
-  }, [currentItems.length, prevItems.length, currentKpis.scoreMedio, currentMetrics.atencao, period, portfolio.selected]);
+  }, [currentItems.length, prevItems.length, currentKpis.scoreMedio, currentMetrics.validacao, period, portfolio.selected]);
 
   // Stable key for risk diagnostic dependency (avoids object reference issues)
   const riskMapKey = useMemo(
@@ -422,10 +423,10 @@ export default function OperationRadar() {
         <>
           {/* Comparative Radars — Side by Side */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Radar AIDA */}
+            {/* Radar VENDA */}
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-lg font-heading">Estrutura da Negociação (AIDA)</CardTitle>
+                <CardTitle className="text-lg font-heading">Estrutura da Venda (VENDA)</CardTitle>
                 <div className="flex items-center gap-6 text-sm mt-2">
                   <span className="flex items-center gap-2">
                     <span className="h-3 w-3 rounded-full bg-primary" />
@@ -441,7 +442,7 @@ export default function OperationRadar() {
               </CardHeader>
               <CardContent className="pt-4">
                 <ResponsiveContainer width="100%" height={380}>
-                  <RadarChart data={radarAidaData} cx="50%" cy="50%" outerRadius="75%">
+                  <RadarChart data={radarVendaData} cx="50%" cy="50%" outerRadius="75%">
                     <PolarGrid stroke="hsl(var(--border))" />
                     <PolarAngleAxis dataKey="subject" tick={{ fill: "hsl(var(--foreground))", fontSize: 13, fontWeight: 500 }} />
                     <PolarRadiusAxis angle={90} domain={[0, 10]} tickCount={6} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} />

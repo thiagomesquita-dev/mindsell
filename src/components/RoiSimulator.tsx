@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
-const APP_URL = "https://app.cobramind.ia.br";
+const APP_URL = "https://app.mindsell.ia.br";
 const PLAN_PRICE = 1497;
 
 function fmt(v: number) {
@@ -15,9 +15,9 @@ function fmt(v: number) {
 
 function getDynamicMessage(ganho: number) {
   if (ganho < 1500)
-    return "Mesmo com uma melhoria conservadora, o CobraMind já ajuda a reduzir perdas.";
+    return "Mesmo com uma melhoria conservadora, o MindSell já ajuda a reduzir perdas.";
   if (ganho <= 6000)
-    return "O CobraMind já se paga e começa a gerar retorno real para a operação.";
+    return "O MindSell já se paga e começa a gerar retorno real para a operação.";
   return "O impacto na operação pode ser significativo, com aumento direto no resultado financeiro.";
 }
 
@@ -37,7 +37,7 @@ export function RoiSimulator() {
         {/* Header */}
         <div className="text-center mb-12">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-heading font-extrabold text-foreground leading-tight">
-            Veja quanto o CobraMind pode gerar na sua operação
+            Veja quanto o MindSell pode gerar na sua operação
           </h2>
           <p className="mt-4 text-muted-foreground text-lg max-w-2xl mx-auto">
             Pequenas melhorias na negociação podem gerar milhares de reais a mais por mês.
@@ -136,7 +136,7 @@ export function RoiSimulator() {
               <div className="rounded-lg border-2 border-success bg-success/5 p-5 text-center ring-2 ring-success/20">
                 <div className="flex items-center justify-center gap-2 mb-2">
                   <TrendingUp className="h-4 w-4 text-success" />
-                  <p className="text-sm font-semibold text-success">Ganho mensal com CobraMind</p>
+                  <p className="text-sm font-semibold text-success">Ganho mensal com MindSell</p>
                 </div>
                 <p className="text-3xl sm:text-4xl font-heading font-extrabold text-success">
                   R$ {fmt(ganho)}
@@ -159,7 +159,7 @@ export function RoiSimulator() {
             {payback > 0 && (
               <div className="mt-6 text-center space-y-3">
                 <p className="text-base sm:text-lg font-medium text-foreground">
-                  Com esse cenário, o CobraMind pode se pagar{" "}
+                  Com esse cenário, o MindSell pode se pagar{" "}
                   <span className="font-extrabold text-primary text-xl">{payback.toFixed(1)}x</span>{" "}
                   no mês.
                 </p>

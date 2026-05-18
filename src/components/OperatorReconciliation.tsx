@@ -20,7 +20,7 @@ export interface ReconciliationRow {
 interface OperatorReconciliationProps {
   fileOperators: string[];
   systemOperators: string[];
-  savedMappings: Record<string, string>; // nome_arquivo -> operador_cobramind
+  savedMappings: Record<string, string>; // nome_arquivo -> operador_mindsell
   onConfirm: (mappings: ReconciliationRow[]) => void;
   onCancel: () => void;
   confirming?: boolean;
@@ -109,7 +109,7 @@ export function OperatorReconciliation({
           Conciliação de Operadores
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          Vincule cada operador encontrado no arquivo com o operador cadastrado no CobraMind.
+          Vincule cada operador encontrado no arquivo com o operador cadastrado no MindSell.
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -155,7 +155,7 @@ export function OperatorReconciliation({
             <TableHeader>
               <TableRow>
                 <TableHead>Operador no Arquivo</TableHead>
-                <TableHead>Operador no CobraMind</TableHead>
+                <TableHead>Operador no MindSell</TableHead>
                 <TableHead className="w-[140px]">Status</TableHead>
               </TableRow>
             </TableHeader>

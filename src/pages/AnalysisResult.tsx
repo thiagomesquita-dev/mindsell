@@ -3,7 +3,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { AnalysisRow, AidaEvaluation } from "@/types/analysis";
+import type { AnalysisRow, VendaEvaluation } from "@/types/analysis";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info, Volume2, Link2, Copy, ArrowLeft, Bug, RefreshCw, History, Sparkles } from "lucide-react";
 import { ExportPdfButton } from "@/components/ExportPdfButton";
@@ -156,11 +156,12 @@ function AudioDebugPanel({ analysis }: { analysis: AnalysisRow }) {
   );
 }
 
-const aidaLabels = [
-  { key: "aida_atencao", letter: "A", label: "ATENÇÃO", color: "bg-primary", description: "Abertura humanizada, identificação do atendente, confirmação de titularidade e contextualização do contato" },
-  { key: "aida_interesse", letter: "I", label: "INTERESSE", color: "bg-success", description: "Ancoragem de valor, apresentação de economia ou desconto, clareza na explicação da dívida e escolha guiada" },
-  { key: "aida_desejo", letter: "D", label: "DESEJO", color: "bg-primary/60", description: "Construção da proposta, empatia, personalização, investigação da situação e tratamento de objeções" },
-  { key: "aida_acao", letter: "A", label: "AÇÃO", color: "bg-success", description: "Fechamento assumido, confirmação de valor/parcela, data de pagamento e encaminhamento para pagamento" },
+const vendaLabels = [
+  { key: "venda_validacao", letter: "V", label: "VALIDAÇÃO", color: "bg-primary", description: "Abertura da conversa, validação de contexto, identificação do cliente e criação de conexão inicial" },
+  { key: "venda_exploracao", letter: "E", label: "EXPLORAÇÃO", color: "bg-success", description: "Investigação das dores, necessidades e objeções do cliente com perguntas abertas e escuta ativa" },
+  { key: "venda_necessidade", letter: "N", label: "NECESSIDADE", color: "bg-primary/60", description: "Conexão entre a solução e a necessidade real, clareza sobre o impacto positivo para o cliente" },
+  { key: "venda_demonstracao", letter: "D", label: "DEMONSTRAÇÃO", color: "bg-success", description: "Apresentação de benefícios concretos, argumentação com evidências e ancoragem de valor da proposta" },
+  { key: "venda_acao", letter: "A", label: "AÇÃO", color: "bg-primary", description: "Encaminhamento claro do próximo passo, fechamento consultivo e confirmação do compromisso assumido" },
 ];
 
 const REANALYSIS_PROVIDERS = [
@@ -304,10 +305,10 @@ export default function AnalysisResult() {
           erro_principal: analysis.erro_principal,
           objecao: analysis.objecao,
           resumo: analysis.resumo,
-          aida_atencao: analysis.aida_atencao,
-          aida_interesse: analysis.aida_interesse,
-          aida_desejo: analysis.aida_desejo,
-          aida_acao: analysis.aida_acao,
+          venda_validacao: analysis.venda_validacao,
+          venda_exploracao: analysis.venda_exploracao,
+          venda_necessidade: analysis.venda_necessidade,
+          venda_acao: analysis.venda_acao,
           operador: analysis.operador,
           carteira: analysis.carteira,
         },
@@ -333,7 +334,7 @@ export default function AnalysisResult() {
           .single();
 
         if (!sessionErr && sessionData?.token) {
-          const link = `https://app.cobramind.ia.br/treino/${sessionData.token}`;
+          const link = `https://app.mindsell.ia.br/treino/${sessionData.token}`;
           setTrainingLink(link);
         }
 
@@ -521,12 +522,12 @@ export default function AnalysisResult() {
       <section>
         <SectionTitle number={5} title="Análise Técnica" />
         <div className="space-y-6">
-          {/* AIDA */}
+          {/* VENDA */}
           <div className="bg-card border border-border rounded-xl p-6">
-            <h3 className="font-heading text-base font-semibold text-foreground mb-4">Análise AIDA</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {aidaLabels.map((item) => {
-                const data = analysis[item.key as keyof AnalysisRow] as AidaEvaluation | null;
+            <h3 className="font-heading text-base font-semibold text-foreground mb-4">Análise VENDA</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+              {vendaLabels.map((item) => {
+                const data = analysis[item.key as keyof AnalysisRow] as VendaEvaluation | null;
                 return (
                   <div key={item.key} className="bg-secondary rounded-xl p-5 border border-border">
                     <div className="flex items-center gap-3 mb-2">

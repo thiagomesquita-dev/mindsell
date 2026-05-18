@@ -62,12 +62,12 @@ export default function Onboarding() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-8">
-          <img src={logo} alt="CobraMind" className="h-14 w-14 mb-4" />
+          <img src={logo} alt="MindSell" className="h-14 w-14 mb-4" />
           <h1 className="font-heading text-2xl font-bold text-foreground">
             Configuração Inicial
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Crie sua empresa para começar a usar o CobraMind
+            Crie sua empresa para começar a usar o MindSell
           </p>
         </div>
 

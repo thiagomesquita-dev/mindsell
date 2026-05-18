@@ -4,7 +4,7 @@ import { Progress } from "@/components/ui/progress";
 const TEXT_STEPS = [
   "Preparando análise...",
   "Processando conversa...",
-  "Aplicando análise AIDA...",
+  "Aplicando metodologia VENDA...",
   "Gerando insights...",
   "Finalizando resultado...",
 ];
@@ -13,7 +13,7 @@ const AUDIO_STEPS = [
   "Enviando áudio...",
   "Transcrevendo ligação...",
   "Processando conversa...",
-  "Aplicando análise AIDA...",
+  "Aplicando metodologia VENDA...",
   "Gerando insights...",
   "Finalizando resultado...",
 ];
@@ -49,14 +49,12 @@ export function AnalysisProgressBar({ isAnalyzing, isDone, hasAudio }: AnalysisP
       return;
     }
 
-    // Max progress before completion = 90%
     const maxProgress = 90;
     const totalSteps = steps.length;
     const progressPerStep = maxProgress / totalSteps;
     let currentProgress = 0;
     let currentStep = 0;
 
-    // Advance every 2-4 seconds with slight randomness
     const baseInterval = hasAudio ? 3500 : 2500;
 
     intervalRef.current = setInterval(() => {
@@ -66,7 +64,6 @@ export function AnalysisProgressBar({ isAnalyzing, isDone, hasAudio }: AnalysisP
         setStepIndex(currentStep);
         setProgress(Math.round(currentProgress));
       } else {
-        // Slow crawl near the end
         currentProgress = Math.min(currentProgress + 1, maxProgress);
         setProgress(Math.round(currentProgress));
       }

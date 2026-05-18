@@ -1,8 +1,8 @@
 /**
- * Interface para o resultado da análise de IA do CobraMind.
+ * Interface para o resultado da análise de IA do MindSell.
  * Representa a estrutura retornada pelo motor de análise (Edge Function).
  */
-export interface AidaEvaluation {
+export interface VendaEvaluation {
   nota?: number;
   comentario?: string;
 }
@@ -12,11 +12,11 @@ export interface AnalysisResult {
   pontos_fortes: string[];
   pontos_melhorar: string[];
   sugestoes: string[];
-  aida_atencao: AidaEvaluation;
-  aida_interesse: AidaEvaluation;
-  aida_desejo: AidaEvaluation;
-  aida_objecao: AidaEvaluation;
-  aida_acao: AidaEvaluation;
+  venda_validacao: VendaEvaluation;
+  venda_exploracao: VendaEvaluation;
+  venda_necessidade: VendaEvaluation;
+  venda_demonstracao: VendaEvaluation;
+  venda_acao: VendaEvaluation;
   categoria_objecao?: string;
   categoria_erro?: string;
   objecao?: string;

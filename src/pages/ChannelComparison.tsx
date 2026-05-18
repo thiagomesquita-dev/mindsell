@@ -10,17 +10,18 @@ import { useCompanyFilter } from "@/contexts/CompanyFilterContext";
 import { Phone, MessageSquare, ArrowUpRight, ArrowDownRight, Minus, Calendar, User } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-type AidaJson = { nota?: number } | null;
+type VendaJson = { nota?: number } | null;
 
 interface AnalysisRow {
   canal: string;
   carteira: string;
   operador: string;
   score: number | null;
-  aida_atencao: AidaJson;
-  aida_interesse: AidaJson;
-  aida_desejo: AidaJson;
-  aida_acao: AidaJson;
+  venda_validacao: VendaJson;
+  venda_exploracao: VendaJson;
+  venda_necessidade: VendaJson;
+  venda_demonstracao: VendaJson;
+  venda_acao: VendaJson;
   objecao: string | null;
   created_at: string;
 }
@@ -32,7 +33,7 @@ const PERIODS = [
   { label: "Últimos 90 dias", days: 90 },
 ];
 
-function getAidaScore(val: AidaJson): number | null {
+function getVendaScore(val: VendaJson): number | null {
   if (!val || typeof val !== "object") return null;
   const nota = (val as { nota?: number }).nota;
   return nota != null ? Number(nota) : null;
@@ -54,10 +55,10 @@ interface ChannelStats {
 
 function computeStats(items: AnalysisRow[]): ChannelStats {
   const scores = items.map((a) => a.score).filter((v): v is number => v != null).map(Number);
-  const atencao = items.map((a) => getAidaScore(a.aida_atencao)).filter((v): v is number => v != null);
-  const interesse = items.map((a) => getAidaScore(a.aida_interesse)).filter((v): v is number => v != null);
-  const desejo = items.map((a) => getAidaScore(a.aida_desejo)).filter((v): v is number => v != null);
-  const acao = items.map((a) => getAidaScore(a.aida_acao)).filter((v): v is number => v != null);
+  const atencao = items.map((a) => getVendaScore(a.venda_validacao)).filter((v): v is number => v != null);
+  const interesse = items.map((a) => getVendaScore(a.venda_exploracao)).filter((v): v is number => v != null);
+  const desejo = items.map((a) => getVendaScore(a.venda_necessidade)).filter((v): v is number => v != null);
+  const acao = items.map((a) => getVendaScore(a.venda_acao)).filter((v): v is number => v != null);
   const withObjection = items.filter((a) => !!a.objecao).length;
 
   return {
@@ -122,7 +123,7 @@ export default function ChannelComparison() {
       since.setDate(since.getDate() - periodDays);
       let query = supabase
         .from("analyses")
-        .select("canal, carteira, operador, score, aida_atencao, aida_interesse, aida_desejo, aida_acao, objecao, created_at")
+        .select("canal, carteira, operador, score, venda_validacao, venda_exploracao, venda_necessidade, venda_demonstracao, venda_acao, objecao, created_at")
         .gte("created_at", since.toISOString());
       if (empresaFilter) {
         query = query.eq("empresa_id", empresaFilter);

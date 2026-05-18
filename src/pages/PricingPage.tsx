@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-const APP_URL = "https://app.cobramind.ia.br";
+const APP_URL = "https://app.mindsell.ia.br";
 
 function Header() {
   return (
@@ -13,7 +13,7 @@ function Header() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         <Link to="/site" className="flex items-center gap-2">
           <Brain className="h-7 w-7 text-primary" />
-          <span className="text-xl font-heading font-bold text-foreground">CobraMind</span>
+          <span className="text-xl font-heading font-bold text-foreground">MindSell</span>
         </Link>
         <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
           <Link to="/site#como-funciona" className="hover:text-foreground transition-colors">Como funciona</Link>
@@ -55,7 +55,7 @@ const plans: Plan[] = [
     limits: ["Até 3 operadores monitorados", "Até 500 análises/mês"],
     features: [
       { text: "Análise completa de negociações", included: true },
-      { text: "Score AIDA automático", included: true },
+      { text: "Score VENDA automático", included: true },
       { text: "Chance de pagamento + risco de quebra", included: true },
       { text: "Diagnóstico claro por negociação", included: true },
       { text: "Exportação de relatórios", included: true },
@@ -109,7 +109,7 @@ const plans: Plan[] = [
       { text: "Suporte prioritário", included: true },
       { text: "Acompanhamento estratégico", included: true },
     ],
-    note: "O CobraMind adaptado à sua operação",
+    note: "O MindSell adaptado à sua operação",
   },
 ];
 
@@ -203,13 +203,13 @@ function Footer() {
       <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
         <div className="flex items-center gap-2">
           <Brain className="h-5 w-5 text-primary" />
-          <span className="font-heading font-bold text-foreground">CobraMind</span>
+          <span className="font-heading font-bold text-foreground">MindSell</span>
         </div>
         <div className="flex items-center gap-6">
           <a href={APP_URL} className="hover:text-foreground transition-colors">Acessar sistema</a>
-          <span>contato@cobramind.ia.br</span>
+          <span>contato@mindsell.ia.br</span>
         </div>
-        <span>© {new Date().getFullYear()} CobraMind. Todos os direitos reservados.</span>
+        <span>© {new Date().getFullYear()} MindSell. Todos os direitos reservados.</span>
       </div>
     </footer>
   );
@@ -281,7 +281,7 @@ export default function PricingPage() {
                   Começar agora <ArrowRight className="h-4 w-4" />
                 </Button>
               </a>
-              <a href="mailto:contato@cobramind.ia.br">
+              <a href="mailto:contato@mindsell.ia.br">
                 <Button variant="outline" size="lg" className="text-base px-8">
                   Falar com a gente
                 </Button>

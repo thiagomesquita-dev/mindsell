@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 const FOUNDER_EMAIL = "thiago@thiagoanalytics.com.br";
-const STORAGE_KEY = "cobramind-company-filter";
+const STORAGE_KEY = "mindsell-company-filter";
 
 interface Company {
   id: string;

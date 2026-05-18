@@ -27,11 +27,11 @@ const mockAnalysis: Tables<"analyses"> = {
   pontos_fortes: ["Boa abertura", "Tom empático"],
   pontos_melhorar: ["Faltou fechamento"],
   sugestoes: ["Usar fechamento presumido"],
-  aida_atencao: { nota: 8, comentario: "Abertura humanizada e clara." },
-  aida_interesse: { nota: 6, comentario: "Apresentou valor mas sem ancoragem." },
-  aida_desejo: { nota: 5, comentario: "Tratou objeção parcialmente." },
-  aida_objecao: { nota: 4, comentario: "Reconheceu a objeção mas não reformulou." },
-  aida_acao: { nota: 3, comentario: "Não realizou fechamento." },
+  venda_validacao: { nota: 8, comentario: "Abertura humanizada e clara." },
+  venda_exploracao: { nota: 6, comentario: "Apresentou valor mas sem ancoragem." },
+  venda_necessidade: { nota: 5, comentario: "Tratou objeção parcialmente." },
+  venda_objecao: { nota: 4, comentario: "Reconheceu a objeção mas não reformulou." },
+  venda_acao: { nota: 3, comentario: "Não realizou fechamento." },
   feedback_diagnostico: "Principal problema: falta de fechamento.",
   feedback_orientacao: "Orientar operador sobre fechamento presumido.",
   feedback_exercicio: "Simular 5 fechamentos diferentes.",
@@ -111,7 +111,7 @@ describe("AnalysisResult", () => {
     // Score
     expect(screen.getByText("72")).toBeInTheDocument();
 
-    // AIDA sections
+    // VENDA sections
     expect(screen.getByText("ATENÇÃO")).toBeInTheDocument();
     expect(screen.getByText("INTERESSE")).toBeInTheDocument();
     expect(screen.getByText("DESEJO")).toBeInTheDocument();

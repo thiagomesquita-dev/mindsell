@@ -36,9 +36,9 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
         <div className="w-full max-w-sm text-center">
           <div className="flex flex-col items-center mb-8">
-            <img src={logo} alt="CobraMind" className="h-14 w-14 mb-4" />
-            <h1 className="font-heading text-2xl font-bold text-foreground">CobraMind</h1>
-            <p className="text-sm text-muted-foreground mt-1 font-semibold">Inteligência para negociações de cobrança</p>
+            <img src={logo} alt="MindSell" className="h-14 w-14 mb-4" />
+            <h1 className="font-heading text-2xl font-bold text-foreground">MindSell</h1>
+            <p className="text-sm text-muted-foreground mt-1 font-semibold">Inteligência para negociações de vendas</p>
             <p className="text-xs text-muted-foreground mt-1">Analise conversas, detecte falhas e transforme monitoria em gestão.</p>
           </div>
 

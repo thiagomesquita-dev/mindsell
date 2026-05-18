@@ -1,6 +1,6 @@
 import { PageHeader } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BookOpen, BarChart3, Users, GraduationCap, Trophy, Eye, Zap, Heart, Target } from "lucide-react";
+import { BookOpen, BarChart3, Users, GraduationCap, Trophy, Search, Lightbulb, Star, Rocket, Target } from "lucide-react";
 
 function Section({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
@@ -27,7 +27,7 @@ export default function Methodology() {
   return (
     <div className="max-w-4xl mx-auto">
       <PageHeader
-        title="Como o CobraMind Avalia"
+        title="Como o MindSell Avalia"
         description="Entenda como cada métrica e análise é calculada dentro do sistema"
       />
 
@@ -36,27 +36,56 @@ export default function Methodology() {
         <Card>
           <CardContent className="pt-6">
             <p className="text-sm text-muted-foreground leading-relaxed">
-              O CobraMind analisa negociações com base em padrões comportamentais, estrutura de conversa e sinais de decisão do cliente, transformando cada interação em dados acionáveis.
+              O MindSell analisa conversas de vendas com base em padrões comportamentais, estrutura de conversa e sinais de decisão do cliente, transformando cada interação em dados acionáveis.
             </p>
             <p className="text-sm text-muted-foreground leading-relaxed mt-3">
-              Cada análise passa por um motor de inteligência artificial que avalia a condução do operador em quatro dimensões (AIDA), identifica barreiras do cliente, detecta erros operacionais e calcula probabilidades de pagamento e risco.
+              Cada análise passa por um motor de inteligência artificial que avalia a condução do vendedor em cinco dimensões (metodologia VENDA), identifica barreiras do cliente, detecta erros operacionais e calcula probabilidades de conversão e risco.
             </p>
           </CardContent>
         </Card>
       </Section>
 
-      {/* SEÇÃO 2 — Metodologia AIDA */}
-      <Section title="Metodologia AIDA" icon={<Target className="h-5 w-5" />}>
+      {/* SEÇÃO 2 — Metodologia VENDA */}
+      <Section title="Metodologia VENDA" icon={<Target className="h-5 w-5" />}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[
-            { icon: <Eye className="h-5 w-5" />, title: "Atenção", desc: "Avalia a abertura da conversa, validação de identidade e criação de conexão com o cliente." },
-            { icon: <Zap className="h-5 w-5" />, title: "Interesse", desc: "Mede a clareza da explicação da situação, da dívida e da proposta apresentada ao cliente." },
-            { icon: <Heart className="h-5 w-5" />, title: "Desejo", desc: "Analisa o tratamento de objeções, empatia e adaptação da proposta à realidade do cliente." },
-            { icon: <Target className="h-5 w-5" />, title: "Ação", desc: "Avalia o fechamento da negociação, confirmação de dados e o compromisso assumido pelo cliente." },
+            {
+              icon: <Search className="h-5 w-5" />,
+              label: "V",
+              title: "Validação do contexto",
+              desc: "Avalia a abertura da conversa, validação de identidade e criação de conexão com o cliente.",
+            },
+            {
+              icon: <Lightbulb className="h-5 w-5" />,
+              label: "E",
+              title: "Exploração da dor",
+              desc: "Mede a profundidade com que o vendedor investiga as dores, necessidades e objeções do cliente.",
+            },
+            {
+              icon: <Star className="h-5 w-5" />,
+              label: "N",
+              title: "Necessidade e impacto",
+              desc: "Analisa se o vendedor conecta a solução à necessidade real e ao impacto percebido pelo cliente.",
+            },
+            {
+              icon: <BarChart3 className="h-5 w-5" />,
+              label: "D",
+              title: "Demonstração de valor",
+              desc: "Avalia a apresentação de benefícios concretos, argumentação com evidências e ancoragem de valor.",
+            },
+            {
+              icon: <Rocket className="h-5 w-5" />,
+              label: "A",
+              title: "Ação e próximo passo",
+              desc: "Avalia o fechamento da conversa, definição do próximo passo e o compromisso assumido pelo cliente.",
+            },
           ].map((item) => (
             <Card key={item.title}>
               <CardHeader className="pb-2">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 text-primary font-heading font-bold text-base">
+                    {item.label}
+                  </div>
                   <div className="text-primary">{item.icon}</div>
                   <CardTitle className="text-base">{item.title}</CardTitle>
                 </div>
@@ -73,21 +102,21 @@ export default function Methodology() {
       <Section title="Métricas da Operação" icon={<BarChart3 className="h-5 w-5" />}>
         <div className="space-y-4">
           <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-base">Chance de Pagamento</CardTitle></CardHeader>
+            <CardHeader className="pb-2"><CardTitle className="text-base">Chance de Conversão</CardTitle></CardHeader>
             <CardContent className="space-y-2">
-              <p className="text-sm text-muted-foreground">A IA analisa sinais na conversa que indicam intenção real de pagamento, capacidade financeira percebida e o quão claro foi o acordo final.</p>
+              <p className="text-sm text-muted-foreground">A IA analisa sinais na conversa que indicam intenção real de compra, capacidade de decisão percebida e o quão claro foi o próximo passo definido.</p>
               <WeightRow label="Intenção do cliente" weight="40%" />
-              <WeightRow label="Capacidade de pagamento" weight="35%" />
-              <WeightRow label="Clareza do compromisso" weight="25%" />
+              <WeightRow label="Capacidade de decisão" weight="35%" />
+              <WeightRow label="Clareza do próximo passo" weight="25%" />
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-base">Risco de Quebra</CardTitle></CardHeader>
+            <CardHeader className="pb-2"><CardTitle className="text-base">Risco de Perda</CardTitle></CardHeader>
             <CardContent className="space-y-2">
-              <p className="text-sm text-muted-foreground">Mesmo após o acordo, a IA identifica sinais de risco com base na qualidade do fechamento e na segurança demonstrada pelo cliente.</p>
+              <p className="text-sm text-muted-foreground">Mesmo após demonstrar interesse, a IA identifica sinais de risco com base na qualidade do encaminhamento e na segurança demonstrada pelo cliente.</p>
               <WeightRow label="Insegurança do cliente" weight="30%" />
-              <WeightRow label="Falta de clareza no fechamento" weight="30%" />
+              <WeightRow label="Falta de clareza no próximo passo" weight="30%" />
               <WeightRow label="Inconsistência na negociação" weight="20%" />
               <WeightRow label="Objeções não resolvidas" weight="20%" />
             </CardContent>
@@ -96,24 +125,23 @@ export default function Methodology() {
           <Card>
             <CardHeader className="pb-2"><CardTitle className="text-base">Qualidade Média</CardTitle></CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">Calculada pela média das quatro etapas da metodologia AIDA, avaliando a condução completa da negociação pelo operador.</p>
+              <p className="text-sm text-muted-foreground">Calculada pela média das cinco etapas da metodologia VENDA, avaliando a condução completa da conversa de vendas pelo operador.</p>
             </CardContent>
           </Card>
         </div>
       </Section>
 
-      {/* SEÇÃO 4 — Como o CobraMind Avalia os Treinamentos */}
-      <Section title="Como o CobraMind Avalia os Treinamentos" icon={<GraduationCap className="h-5 w-5" />}>
+      {/* SEÇÃO 4 — Como o MindSell Avalia os Treinamentos */}
+      <Section title="Como o MindSell Avalia os Treinamentos" icon={<GraduationCap className="h-5 w-5" />}>
         <Card>
           <CardContent className="pt-6 space-y-4">
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Os treinamentos do CobraMind avaliam não apenas a resposta do operador, mas também sua capacidade de interpretar o cenário, tomar a decisão correta e refletir sobre a lição aprendida.
+              Os treinamentos do MindSell avaliam não apenas a resposta do vendedor, mas também sua capacidade de interpretar o cenário, tomar a decisão correta e refletir sobre a lição aprendida.
             </p>
           </CardContent>
         </Card>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-          {/* Nota Final */}
           <Card>
             <CardHeader className="pb-2"><CardTitle className="text-base">Nota Final</CardTitle></CardHeader>
             <CardContent className="space-y-2">
@@ -127,11 +155,10 @@ export default function Methodology() {
             </CardContent>
           </Card>
 
-          {/* Qualidade da Resposta */}
           <Card>
             <CardHeader className="pb-2"><CardTitle className="text-base">Qualidade da Resposta</CardTitle></CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">Avalia a qualidade prática da resposta do operador, incluindo clareza, objetividade e aplicabilidade.</p>
+              <p className="text-sm text-muted-foreground">Avalia a qualidade prática da resposta do vendedor, incluindo clareza, objetividade e aplicabilidade.</p>
               <div className="flex gap-3 text-sm mt-3">
                 <span className="text-success font-medium">🟢 Alta</span>
                 <span className="text-warning font-medium">🟡 Média</span>
@@ -140,11 +167,10 @@ export default function Methodology() {
             </CardContent>
           </Card>
 
-          {/* Entendimento */}
           <Card>
             <CardHeader className="pb-2"><CardTitle className="text-base">Entendimento</CardTitle></CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">Mede se o operador entendeu corretamente a necessidade do cliente e o foco da negociação.</p>
+              <p className="text-sm text-muted-foreground">Mede se o vendedor entendeu corretamente a necessidade do cliente e o foco da conversa de vendas.</p>
               <div className="flex gap-3 text-sm mt-3">
                 <span className="text-success font-medium">🟢 Alto</span>
                 <span className="text-warning font-medium">🟡 Médio</span>
@@ -153,7 +179,6 @@ export default function Methodology() {
             </CardContent>
           </Card>
 
-          {/* Coerência */}
           <Card>
             <CardHeader className="pb-2"><CardTitle className="text-base">Coerência</CardTitle></CardHeader>
             <CardContent>
@@ -167,12 +192,11 @@ export default function Methodology() {
           </Card>
         </div>
 
-        {/* Nível de Aprendizado, Interpretação/Decisão, Resposta/Reflexão */}
         <div className="space-y-4 mt-4">
           <Card>
             <CardHeader className="pb-2"><CardTitle className="text-base">Nível de Aprendizado</CardTitle></CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">Indica o quanto o operador transformou o cenário em aprendizado prático, demonstrando capacidade de corrigir erros e aplicar a abordagem esperada.</p>
+              <p className="text-sm text-muted-foreground">Indica o quanto o vendedor transformou o cenário em aprendizado prático, demonstrando capacidade de corrigir erros e aplicar a abordagem esperada.</p>
               <div className="flex gap-3 text-sm mt-3">
                 <span className="text-success font-medium">🟢 Alto</span>
                 <span className="text-warning font-medium">🟡 Médio</span>
@@ -184,14 +208,14 @@ export default function Methodology() {
           <Card>
             <CardHeader className="pb-2"><CardTitle className="text-base">Interpretação e Decisão</CardTitle></CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">As perguntas de múltipla escolha ajudam a medir se o operador conseguiu interpretar corretamente o cenário e escolher a melhor ação antes mesmo de responder.</p>
+              <p className="text-sm text-muted-foreground">As perguntas de múltipla escolha ajudam a medir se o vendedor conseguiu interpretar corretamente o cenário e escolher a melhor ação antes mesmo de responder.</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="pb-2"><CardTitle className="text-base">Resposta e Reflexão</CardTitle></CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">O CobraMind analisa tanto a resposta prática quanto a lição que o operador tirou da negociação, para diferenciar execução de entendimento real.</p>
+              <p className="text-sm text-muted-foreground">O MindSell analisa tanto a resposta prática quanto a lição que o vendedor tirou da conversa, para diferenciar execução de entendimento real.</p>
             </CardContent>
           </Card>
         </div>
@@ -222,12 +246,12 @@ export default function Methodology() {
         </Card>
       </Section>
 
-      {/* SEÇÃO 6 — Sobre o CobraMind */}
+      {/* SEÇÃO 6 — Sobre a Metodologia */}
       <Section title="Sobre a Metodologia" icon={<Users className="h-5 w-5" />}>
         <Card>
           <CardContent className="pt-6">
             <p className="text-sm text-muted-foreground leading-relaxed">
-              O CobraMind não é apenas uma ferramenta — é uma metodologia de análise de negociações de cobrança baseada em inteligência artificial. Cada métrica foi projetada para transformar conversas em dados acionáveis, permitindo que supervisores e gestores tomem decisões baseadas em evidências, não em impressões.
+              O MindSell não é apenas uma ferramenta — é uma metodologia de análise de conversas de vendas baseada em inteligência artificial. A metodologia VENDA foi projetada para transformar interações em dados acionáveis, permitindo que supervisores e gestores tomem decisões baseadas em evidências, não em impressões.
             </p>
           </CardContent>
         </Card>

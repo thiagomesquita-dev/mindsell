@@ -121,7 +121,7 @@ serve(async (req) => {
     // Get latest analyses
     const { data: analyses, error: fetchErr } = await supabase
       .from("analyses")
-      .select("id, erro_principal, objecao, resumo, aida_atencao, aida_interesse, aida_desejo, aida_acao, score, carteira")
+      .select("id, erro_principal, objecao, resumo, venda_validacao, venda_exploracao, venda_necessidade, venda_demonstracao, venda_acao, score, carteira")
       .eq("operador", operador)
       .eq("empresa_id", empresa_id)
       .order("created_at", { ascending: false })
@@ -277,7 +277,7 @@ Com base nesses padrões, gere um treino consolidado usando a tool.`;
       console.error("[gerar-treino-automatico] Failed to log AI usage:", logErr);
     }
 
-    const link = `https://app.cobramind.ia.br/treino/${sessionData.token}`;
+    const link = `https://app.mindsell.ia.br/treino/${sessionData.token}`;
 
     return new Response(JSON.stringify({ success: true, token: sessionData.token, link, training }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
