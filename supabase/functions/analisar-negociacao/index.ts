@@ -22,6 +22,8 @@ interface AnalysisPayload {
   transcricao?: string;
   audio_urls?: string[];
   duracao_audio_total?: number;
+  is_reanalysis?: boolean;
+  source_analysis_id?: string;
 }
 
 interface AIAnalysisResult {
@@ -52,7 +54,6 @@ interface AIAnalysisResult {
   feedback_orientacao: string;
   feedback_exercicio: string;
   feedback_exemplo: string;
-  marcacoes_transcricao: TranscriptionMarker[];
   marcacoes_transcricao: TranscriptionMarker[];
   /** Subindicadores da chance de pagamento (0-100) */
   intencao_cliente: number;
@@ -266,6 +267,11 @@ const ANALYSIS_SCHEMA = {
     required: ["nota", "comentario"],
   },
   venda_necessidade: {
+    type: "object",
+    properties: { nota: { type: "number" }, comentario: { type: "string" } },
+    required: ["nota", "comentario"],
+  },
+  venda_demonstracao: {
     type: "object",
     properties: { nota: { type: "number" }, comentario: { type: "string" } },
     required: ["nota", "comentario"],
@@ -941,7 +947,7 @@ serve(async (req) => {
     // Determine AI provider — only founder can override
     const FOUNDER_EMAIL = "thiago@thiagoanalytics.com.br";
     const rawPayload = await req.json();
-    const { operador, carteira, canal, transcricao, audio_urls, duracao_audio_total: clientDuration } = rawPayload as AnalysisPayload;
+    const { operador, carteira, canal, transcricao, audio_urls, duracao_audio_total: clientDuration, is_reanalysis: isReanalysis = false, source_analysis_id: sourceAnalysisId } = rawPayload as AnalysisPayload;
     const audioDebug = rawPayload.audio_debug as Record<string, unknown>[] | undefined;
 
     // Log audio debug info from frontend preprocessing
@@ -1243,7 +1249,7 @@ ${finalTranscricao}`;
         venda_validacao: analysis.venda_validacao,
         venda_exploracao: analysis.venda_exploracao,
         venda_necessidade: analysis.venda_necessidade,
-        
+        venda_demonstracao: analysis.venda_demonstracao,
         venda_acao: analysis.venda_acao,
         tecnica_usada: analysis.tecnica_usada,
         objecao: analysis.objecao,
@@ -1274,6 +1280,8 @@ ${finalTranscricao}`;
         custo_estimado: custoEstimado,
         tempo_resposta: tempoResposta,
         duracao_audio_total: totalAudioDuration,
+        is_reanalysis: isReanalysis,
+        source_analysis_id: sourceAnalysisId || null,
       })
       .select("id")
       .single();
@@ -1289,7 +1297,7 @@ ${finalTranscricao}`;
         empresa_id: profile.empresa_id,
         user_id: user.id,
         analysis_id: inserted?.id || null,
-        action_type: "analysis",
+        action_type: isReanalysis ? "reanalysis" : "analysis",
         provider: aiProvider,
         model,
         input_tokens: tokensPrompt,
@@ -1297,14 +1305,14 @@ ${finalTranscricao}`;
         audio_seconds: totalAudioDuration,
         estimated_cost_usd: custoEstimado,
         status: "success",
-        metadata: { operador, carteira, canal, fallback: aiProvider.includes("fallback") || undefined },
+        metadata: { operador, carteira, canal, fallback: aiProvider.includes("fallback") || undefined, is_reanalysis: isReanalysis || undefined, source_analysis_id: sourceAnalysisId || undefined },
       });
     } catch (logErr) {
       console.error("[analisar-negociacao] Failed to log AI usage:", logErr);
     }
 
-    // Trigger cycle check in background (fire-and-forget)
-    try {
+    // Trigger cycle check only for operational analyses. Reanalyses are comparisons, not new negotiations.
+    if (!isReanalysis) try {
       const cycleResp = await fetch(`${supabaseUrl}/functions/v1/gerar-ciclo-operador`, {
         method: "POST",
         headers: {
