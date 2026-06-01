@@ -88,6 +88,8 @@ serve(async (req) => {
         audio_urls: original.audio_urls,
         duracao_audio_total: original.duracao_audio_total,
         provider,
+        is_reanalysis: true,
+        source_analysis_id: analysis_id,
       }),
     });
 
