@@ -74,6 +74,7 @@ export default function Dashboard() {
       let query = supabase
         .from("analyses")
         .select("score, chance_pagamento, risco_quebra, categoria_objecao, categoria_erro, tecnica_usada, carteira, operador, venda_validacao, venda_exploracao, venda_necessidade, venda_demonstracao, venda_acao, created_at, intencao_cliente, capacidade_percebida, firmeza_compromisso")
+        .eq("is_reanalysis", false)
         .order("created_at", { ascending: false });
       
       if (empresaFilter) {
