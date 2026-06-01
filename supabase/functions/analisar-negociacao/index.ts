@@ -22,6 +22,8 @@ interface AnalysisPayload {
   transcricao?: string;
   audio_urls?: string[];
   duracao_audio_total?: number;
+  is_reanalysis?: boolean;
+  source_analysis_id?: string;
 }
 
 interface AIAnalysisResult {
@@ -52,7 +54,6 @@ interface AIAnalysisResult {
   feedback_orientacao: string;
   feedback_exercicio: string;
   feedback_exemplo: string;
-  marcacoes_transcricao: TranscriptionMarker[];
   marcacoes_transcricao: TranscriptionMarker[];
   /** Subindicadores da chance de pagamento (0-100) */
   intencao_cliente: number;
@@ -178,8 +179,8 @@ REGRAS DE AJUSTE POR TIPO DE CONTATO:
    - score e nota_qa devem refletir ausência de negociação.
 
 DETECÇÃO DE FRASES CONDICIONAIS (REGRA CRÍTICA):
-Se o cliente usar frases com "se", "quando", "depois que", "caso", "talvez", "vou ver", "vou tentar":
-- Classificar como INTENÇÃO FRACA.
+Se o cliente usar frases com "se", "quando", "depois", "talvez", "vou tentar", "se eu conseguir", "quando eu receber", "vou ver", "acho que", "quem sabe" ou equivalentes:
+- NÃO tratar como compromisso firme.
 - intencao_cliente deve ser reduzido (máx 40 se houver predominância de frases condicionais).
 - firmeza_compromisso deve ser reduzido proporcionalmente.
 - No comentário de venda_acao, registrar: "Cliente usou linguagem condicional — intenção classificada como fraca."
@@ -266,6 +267,11 @@ const ANALYSIS_SCHEMA = {
     required: ["nota", "comentario"],
   },
   venda_necessidade: {
+    type: "object",
+    properties: { nota: { type: "number" }, comentario: { type: "string" } },
+    required: ["nota", "comentario"],
+  },
+  venda_demonstracao: {
     type: "object",
     properties: { nota: { type: "number" }, comentario: { type: "string" } },
     required: ["nota", "comentario"],
@@ -513,17 +519,9 @@ async function callGemini(apiKey: string, model: string, userPrompt: string): Pr
   console.log(`[analisar-negociacao] Gemini modelo: ${model}`);
 
   const jsonInstruction = `\n\nRETORNE OBRIGATORIAMENTE um JSON válido com os seguintes campos: ${REQUIRED_FIELDS.join(", ")}. Não inclua nenhum texto fora do JSON. O JSON deve começar com { e terminar com }.`;
-
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-
   const body = JSON.stringify({
-    contents: [
-      {
-        parts: [
-          { text: SYSTEM_PROMPT + jsonInstruction + "\n\n" + userPrompt },
-        ],
-      },
-    ],
+    contents: [{ parts: [{ text: SYSTEM_PROMPT + jsonInstruction + "\n\n" + userPrompt }] }],
     generationConfig: {
       responseMimeType: "application/json",
       responseSchema: {
@@ -533,31 +531,11 @@ async function callGemini(apiKey: string, model: string, userPrompt: string): Pr
             if (key === "marcacoes_transcricao") {
               return [key, {
                 type: "ARRAY",
-                items: {
-                  type: "OBJECT",
-                  properties: {
-                    tipo: { type: "STRING" },
-                    timestamp: { type: "STRING" },
-                    trecho: { type: "STRING" },
-                    motivo: { type: "STRING" },
-                  },
-                  required: ["tipo", "trecho", "motivo"],
-                },
+                items: { type: "OBJECT", properties: { tipo: { type: "STRING" }, timestamp: { type: "STRING" }, trecho: { type: "STRING" }, motivo: { type: "STRING" } }, required: ["tipo", "trecho", "motivo"] },
               }];
             }
-            if (val.type === "array") {
-              return [key, { type: "ARRAY", items: { type: "STRING" } }];
-            }
-            if (val.type === "object") {
-              return [key, {
-                type: "OBJECT",
-                properties: {
-                  nota: { type: "NUMBER" },
-                  comentario: { type: "STRING" },
-                },
-                required: ["nota", "comentario"],
-              }];
-            }
+            if (val.type === "array") return [key, { type: "ARRAY", items: { type: "STRING" } }];
+            if (val.type === "object") return [key, { type: "OBJECT", properties: { nota: { type: "NUMBER" }, comentario: { type: "STRING" } }, required: ["nota", "comentario"] }];
             return [key, { type: val.type === "number" ? "NUMBER" : "STRING" }];
           })
         ),
@@ -566,12 +544,7 @@ async function callGemini(apiKey: string, model: string, userPrompt: string): Pr
     },
   });
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body,
-  });
-
+  const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body });
   if (!response.ok) {
     const errorText = await response.text();
     console.error("Gemini error:", response.status, errorText);
@@ -580,7 +553,6 @@ async function callGemini(apiKey: string, model: string, userPrompt: string): Pr
   }
 
   const data = await response.json();
-
   const textContent = data.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!textContent) throw new Error("Gemini não retornou conteúdo");
 
@@ -589,11 +561,8 @@ async function callGemini(apiKey: string, model: string, userPrompt: string): Pr
     parsed = JSON.parse(textContent);
   } catch {
     const jsonMatch = textContent.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (jsonMatch) {
-      parsed = JSON.parse(jsonMatch[1].trim());
-    } else {
-      throw new Error("Gemini retornou resposta não-JSON");
-    }
+    if (jsonMatch) parsed = JSON.parse(jsonMatch[1].trim());
+    else throw new Error("Gemini retornou resposta não-JSON");
   }
 
   const usageMetadata = data.usageMetadata || {};
@@ -605,732 +574,98 @@ async function callGemini(apiKey: string, model: string, userPrompt: string): Pr
 }
 
 // ─── Claude (Anthropic) Provider ───
-
-// Prompt otimizado para Claude: mais curto, direto, sem redundâncias
-const CLAUDE_SYSTEM_PROMPT = `Supervisor de cobrança avaliando negociação. Seja CONCISO e DIRETO. Sem explicações teóricas.
-
-LIMITES RÍGIDOS DE RESPOSTA:
-- resumo: máx 2 frases
-- pontos_fortes/pontos_melhorar/sugestoes: máx 3 itens cada, 1 frase curta por item
-- erro_principal/mensagem_ideal: máx 2 frases
-- Cada comentário AIDA: máx 1 frase + nota 0-10
-- justificativa_conformidade: máx 1 frase
-- feedback_*: máx 1 frase cada
-
-CAMPOS OBRIGATÓRIOS:
-- nivel_habilidade: "Iniciante|Em desenvolvimento|Consistente|Avançado — justificativa curta"
-- tecnica_usada: "Estratégia — justificativa curta"
-- tom_operador: "Classificação — observação curta"
-- conformidade: "Conforme|Parcialmente Conforme|Não Conforme"
-- Numéricos (0-100): risco_quebra, chance_pagamento, nota_qa, score, intencao_cliente, capacidade_percebida, firmeza_compromisso
-- chance_pagamento = 0.40*intencao_cliente + 0.35*capacidade_percebida + 0.25*firmeza_compromisso
-- categoria_objecao/categoria_erro: máx 3 palavras, CAIXA ALTA
-- marcacoes_transcricao: 2-7 marcações com tipo (objecao|falha|boa_pratica), trecho literal (máx 10 palavras) e motivo (máx 15 palavras, obrigatório para falha e objecao)
-
-AIDA (contexto cobrança): ATENÇÃO (abertura), INTERESSE (apresentação dívida), DESEJO (proposta + objeções), AÇÃO (fechamento).
-
-Não inclua nomes de clientes. Resposta CURTA e OBJETIVA.`;
-
+const CLAUDE_SYSTEM_PROMPT = `Supervisor de cobrança avaliando negociação. Seja CONCISO e DIRETO. Sem explicações teóricas.`;
 const MAX_TRANSCRIPTION_CHARS_CLAUDE = 4000;
 const MAX_TRANSCRIPTION_CHARS_OPUS = 1500;
-
-function truncateForClaude(text: string, maxChars = MAX_TRANSCRIPTION_CHARS_CLAUDE): string {
-  if (text.length <= maxChars) return text;
-  // Keep beginning and end for context (objection/closing usually at end)
-  const half = Math.floor(maxChars / 2);
-  return text.slice(0, half) + "\n\n[...]\n\n" + text.slice(-half);
-}
-
-// ─── Opus: Ultra-compact prompt and minimal schema for cost optimization ───
-
+function truncateForClaude(text: string, maxChars = MAX_TRANSCRIPTION_CHARS_CLAUDE): string { if (text.length <= maxChars) return text; const half = Math.floor(maxChars / 2); return text.slice(0, half) + "\n\n[...]\n\n" + text.slice(-half); }
 const OPUS_SYSTEM_PROMPT = `Avalie a negociação de cobrança. JSON apenas. Sem explicações. Máx 400 tokens.`;
-
-// Minimal schema: only fields essential for Opus analysis
-const OPUS_ANALYSIS_SCHEMA = {
-  resumo: { type: "string", description: "Veredito em 1 frase" },
-  venda_validacao: { type: "number", description: "Nota VENDA Validação 0-10" },
-  venda_exploracao: { type: "number", description: "Nota VENDA Exploração 0-10" },
-  venda_necessidade: { type: "number", description: "Nota VENDA Necessidade 0-10" },
-  venda_demonstracao: { type: "number", description: "Nota VENDA Demonstração 0-10" },
-  venda_acao: { type: "number", description: "Nota VENDA Ação 0-10" },
-  erro_principal: { type: "string", description: "Erro principal, máx 10 palavras" },
-  objecao: { type: "string", description: "Objeção principal do cliente, máx 10 palavras" },
-  categoria_objecao: { type: "string", description: "Categoria objeção, máx 3 palavras CAIXA ALTA" },
-  chance_pagamento: { type: "number", description: "0-100" },
-  risco_quebra: { type: "number", description: "0-100" },
-  score: { type: "number", description: "Nota geral 0-100" },
-  nota_qa: { type: "number", description: "QA 0-100" },
-  intencao_cliente: { type: "number", description: "0-100" },
-  capacidade_percebida: { type: "number", description: "0-100" },
-  firmeza_compromisso: { type: "number", description: "0-100" },
-  
-};
-
+const OPUS_ANALYSIS_SCHEMA = { resumo: { type: "string" }, venda_validacao: { type: "number" }, venda_exploracao: { type: "number" }, venda_necessidade: { type: "number" }, venda_demonstracao: { type: "number" }, venda_acao: { type: "number" }, erro_principal: { type: "string" }, objecao: { type: "string" }, categoria_objecao: { type: "string" }, chance_pagamento: { type: "number" }, risco_quebra: { type: "number" }, score: { type: "number" }, nota_qa: { type: "number" }, intencao_cliente: { type: "number" }, capacidade_percebida: { type: "number" }, firmeza_compromisso: { type: "number" } };
 const OPUS_REQUIRED_FIELDS = Object.keys(OPUS_ANALYSIS_SCHEMA);
+const OPUS_TOOL_DEFINITION = { name: "analise_opus", description: "Análise compacta de negociação de cobrança", input_schema: { type: "object", properties: OPUS_ANALYSIS_SCHEMA, required: OPUS_REQUIRED_FIELDS } };
+function expandOpusResult(compact: Record<string, unknown>): AIAnalysisResult { return { resumo: String(compact.resumo || ""), pontos_fortes: [], pontos_melhorar: [], sugestoes: [], venda_validacao: { nota: Number(compact.venda_validacao) || 0, comentario: "" }, venda_exploracao: { nota: Number(compact.venda_exploracao) || 0, comentario: "" }, venda_necessidade: { nota: Number(compact.venda_necessidade) || 0, comentario: "" }, venda_demonstracao: { nota: Number(compact.venda_demonstracao) || 0, comentario: "" }, venda_acao: { nota: Number(compact.venda_acao) || 0, comentario: "" }, tecnica_usada: "", objecao: String(compact.objecao || ""), tom_operador: "", risco_quebra: Number(compact.risco_quebra) || 0, chance_pagamento: Number(compact.chance_pagamento) || 0, erro_principal: String(compact.erro_principal || ""), mensagem_ideal: "", nota_qa: Number(compact.nota_qa) || 0, nivel_habilidade: "", conformidade: "", justificativa_conformidade: "", score: Number(compact.score) || 0, categoria_objecao: String(compact.categoria_objecao || ""), categoria_erro: "", feedback_diagnostico: "", feedback_orientacao: "", feedback_exercicio: "", feedback_exemplo: "", marcacoes_transcricao: [], intencao_cliente: Number(compact.intencao_cliente) || 0, capacidade_percebida: Number(compact.capacidade_percebida) || 0, firmeza_compromisso: Number(compact.firmeza_compromisso) || 0, tipo_contato: "Devedor direto" }; }
+async function callClaude(apiKey: string, model: string, userPrompt: string): Promise<AIProviderResult> { const response = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "Content-Type": "application/json" }, body: JSON.stringify({ model, max_tokens: 4096, temperature: 0.2, system: CLAUDE_SYSTEM_PROMPT, messages: [{ role: "user", content: userPrompt }], tools: [{ name: "analise_negociacao", description: "Análise estruturada", input_schema: { type: "object", properties: ANALYSIS_SCHEMA, required: REQUIRED_FIELDS } }], tool_choice: { type: "tool", name: "analise_negociacao" } }) }); if (!response.ok) throw new Error(`Claude error: ${response.status}`); const data = await response.json(); const toolUseBlock = data.content?.find((b: { type: string }) => b.type === "tool_use"); if (!toolUseBlock?.input) throw new Error("Claude não retornou resultado estruturado"); return { analysis: validateAnalysisResult(toolUseBlock.input), tokensPrompt: data.usage?.input_tokens || 0, tokensResposta: data.usage?.output_tokens || 0 }; }
+async function callClaudeOpus(apiKey: string, model: string, userPrompt: string): Promise<AIProviderResult> { const response = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "Content-Type": "application/json" }, body: JSON.stringify({ model, max_tokens: 1000, temperature: 0.2, system: OPUS_SYSTEM_PROMPT, messages: [{ role: "user", content: userPrompt }], tools: [OPUS_TOOL_DEFINITION], tool_choice: { type: "tool", name: "analise_opus" } }) }); if (!response.ok) throw new Error(`Opus error: ${response.status}`); const data = await response.json(); const toolUseBlock = data.content?.find((b: { type: string }) => b.type === "tool_use"); if (!toolUseBlock?.input) throw new Error("Opus não retornou resultado estruturado"); return { analysis: expandOpusResult(toolUseBlock.input), tokensPrompt: data.usage?.input_tokens || 0, tokensResposta: data.usage?.output_tokens || 0 }; }
 
-const OPUS_TOOL_DEFINITION = {
-  name: "analise_opus",
-  description: "Análise compacta de negociação de cobrança",
-  input_schema: {
-    type: "object",
-    properties: OPUS_ANALYSIS_SCHEMA,
-    required: OPUS_REQUIRED_FIELDS,
-  },
-};
-
-/** Fill default values for DB fields not returned by Opus minimal schema */
-function expandOpusResult(compact: Record<string, unknown>): AIAnalysisResult {
-  return {
-    resumo: String(compact.resumo || ""),
-    pontos_fortes: [],
-    pontos_melhorar: [],
-    sugestoes: [],
-    venda_validacao: { nota: Number(compact.venda_validacao) || 0, comentario: "" },
-    venda_exploracao: { nota: Number(compact.venda_exploracao) || 0, comentario: "" },
-    venda_necessidade: { nota: Number(compact.venda_necessidade) || 0, comentario: "" },
-    venda_demonstracao: { nota: Number(compact.venda_demonstracao) || 0, comentario: "" },
-    venda_acao: { nota: Number(compact.venda_acao) || 0, comentario: "" },
-    tecnica_usada: "",
-    objecao: String(compact.objecao || ""),
-    tom_operador: "",
-    risco_quebra: Number(compact.risco_quebra) || 0,
-    chance_pagamento: Number(compact.chance_pagamento) || 0,
-    erro_principal: String(compact.erro_principal || ""),
-    mensagem_ideal: "",
-    nota_qa: Number(compact.nota_qa) || 0,
-    nivel_habilidade: "",
-    conformidade: "",
-    justificativa_conformidade: "",
-    score: Number(compact.score) || 0,
-    categoria_objecao: String(compact.categoria_objecao || ""),
-    categoria_erro: "",
-    feedback_diagnostico: "",
-    feedback_orientacao: "",
-    feedback_exercicio: "",
-    feedback_exemplo: "",
-    marcacoes_transcricao: [],
-    intencao_cliente: Number(compact.intencao_cliente) || 0,
-    capacidade_percebida: Number(compact.capacidade_percebida) || 0,
-    firmeza_compromisso: Number(compact.firmeza_compromisso) || 0,
-  };
-}
-
-// Cost alert threshold in BRL
-const COST_ALERT_THRESHOLD_BRL = 0.30;
-const USD_TO_BRL = 5.5;
-
-async function callClaude(apiKey: string, model: string, userPrompt: string, maxRetries = 3, systemPrompt = CLAUDE_SYSTEM_PROMPT, maxTokens = 4096): Promise<AIProviderResult> {
-  console.log(`[analisar-negociacao] Claude modelo: ${model}, max_tokens: ${maxTokens}`);
-
-  const toolDef = {
-    name: "analise_negociacao",
-    description: "Análise estruturada de negociação de cobrança. Seja conciso.",
-    input_schema: {
-      type: "object",
-      properties: ANALYSIS_SCHEMA,
-      required: REQUIRED_FIELDS,
-    },
-  };
-
-  const body = JSON.stringify({
-    model,
-    max_tokens: maxTokens,
-    temperature: 0.2,
-    system: systemPrompt,
-    messages: [{ role: "user", content: userPrompt }],
-    tools: [toolDef],
-    tool_choice: { type: "tool", name: "analise_negociacao" },
-  });
-
-  let response: Response | null = null;
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "Content-Type": "application/json",
-      },
-      body,
-    });
-    if (response.status === 429) {
-      const retryAfter = parseInt(response.headers.get("Retry-After") || "0", 10);
-      const delay = Math.max(retryAfter * 1000, (attempt + 1) * 2000);
-      console.log(`Claude rate limited, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
-      await response.text();
-      await new Promise((r) => setTimeout(r, delay));
-      continue;
-    }
-    break;
-  }
-
-  if (!response || !response.ok) {
-    const status = response?.status;
-    const errorText = response ? await response.text() : "no response";
-    console.error("Claude error:", status, errorText);
-    if (status === 429) throw new Error("RATE_LIMITED");
-    throw new Error(`Claude error: ${status}`);
-  }
-
-  const data = await response.json();
-
-  // Check for truncation
-  if (data.stop_reason === "max_tokens") {
-    console.warn("[analisar-negociacao] Claude response truncated (max_tokens). Consider increasing limit.");
-  }
-
-  // Extract tool_use block
-  const toolUseBlock = data.content?.find((b: { type: string }) => b.type === "tool_use");
-  if (!toolUseBlock?.input) throw new Error("Claude não retornou resultado estruturado (tool_use)");
-
-  const parsed = toolUseBlock.input as Record<string, unknown>;
-  const usage = data.usage || {};
-
-  return {
-    analysis: validateAnalysisResult(parsed),
-    tokensPrompt: usage.input_tokens || 0,
-    tokensResposta: usage.output_tokens || 0,
-  };
-}
-
-// ─── Claude Opus (minimal schema, cost-optimized) ───
-
-async function callClaudeOpus(apiKey: string, model: string, userPrompt: string, maxRetries = 3): Promise<AIProviderResult> {
-  console.log(`[analisar-negociacao] Opus otimizado: modelo=${model}, max_tokens=1000`);
-
-  const body = JSON.stringify({
-    model,
-    max_tokens: 1000,
-    temperature: 0.2,
-    system: OPUS_SYSTEM_PROMPT,
-    messages: [{ role: "user", content: userPrompt }],
-    tools: [OPUS_TOOL_DEFINITION],
-    tool_choice: { type: "tool", name: "analise_opus" },
-  });
-
-  let response: Response | null = null;
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "Content-Type": "application/json",
-      },
-      body,
-    });
-    if (response.status === 429) {
-      const delay = (attempt + 1) * 2000;
-      console.log(`Opus rate limited, retrying in ${delay}ms`);
-      await response.text();
-      await new Promise((r) => setTimeout(r, delay));
-      continue;
-    }
-    break;
-  }
-
-  if (!response || !response.ok) {
-    const status = response?.status;
-    const errorText = response ? await response.text() : "no response";
-    console.error("Opus error:", status, errorText);
-    if (status === 429) throw new Error("RATE_LIMITED");
-    throw new Error(`Opus error: ${status}`);
-  }
-
-  const data = await response.json();
-  if (data.stop_reason === "max_tokens") {
-    console.warn("[analisar-negociacao] Opus truncated (max_tokens).");
-  }
-
-  const toolUseBlock = data.content?.find((b: { type: string }) => b.type === "tool_use");
-  if (!toolUseBlock?.input) throw new Error("Opus não retornou resultado estruturado");
-
-  const compact = toolUseBlock.input as Record<string, unknown>;
-  const usage = data.usage || {};
-
-  return {
-    analysis: expandOpusResult(compact),
-    tokensPrompt: usage.input_tokens || 0,
-    tokensResposta: usage.output_tokens || 0,
-  };
-}
-
-// ─── Dialogue Structuring (post-transcription) ───
-
-const STRUCTURING_PROMPT = `Você é um assistente especializado em transcrições de cobrança. Sua tarefa é reorganizar a transcrição bruta abaixo em formato de diálogo estruturado.
-
-REGRAS OBRIGATÓRIAS:
-1. NÃO invente conteúdo. Use APENAS o texto original.
-2. Separe as falas entre OPERADOR e CLIENTE.
-3. Se não for possível identificar quem falou, use: FALANTE NÃO IDENTIFICADO
-4. Mantenha a ordem cronológica original.
-5. Corrija apenas quebras de linha e pontuação mínima para legibilidade.
-6. NÃO resuma, NÃO omita trechos, NÃO adicione comentários.
-
-FORMATO DE SAÍDA (texto puro, sem JSON):
-OPERADOR: [fala do operador]
-CLIENTE: [fala do cliente]
-OPERADOR: [fala do operador]
-...
-
-DICAS PARA IDENTIFICAÇÃO:
-- O operador geralmente: se identifica no início, menciona empresa/carteira, apresenta propostas, valores, condições de pagamento.
-- O cliente geralmente: responde perguntas, apresenta objeções, faz perguntas sobre valores, confirma ou recusa propostas.
-- Mudanças de turno são indicadas por mudança de contexto, perguntas seguidas de respostas, ou pausas naturais no diálogo.`;
-
-async function structureTranscription(apiKey: string, rawText: string, operador: string): Promise<string> {
-  console.log(`[analisar-negociacao] Estruturando transcrição em diálogo...`);
-
-  const userMsg = `Operador da negociação: ${operador}\n\nTranscrição bruta:\n${rawText}`;
-
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "gpt-4.1-mini",
-      messages: [
-        { role: "system", content: STRUCTURING_PROMPT },
-        { role: "user", content: userMsg },
-      ],
-      temperature: 0,
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error("[analisar-negociacao] Structuring error:", errorText);
-    console.log("[analisar-negociacao] Usando transcrição bruta como fallback");
-    return rawText;
-  }
-
-  const data = await response.json();
-  const structured = data.choices?.[0]?.message?.content?.trim();
-
-  if (!structured || structured.length < rawText.length * 0.3) {
-    console.log("[analisar-negociacao] Estruturação retornou resultado insuficiente, usando bruta");
-    return rawText;
-  }
-
-  console.log(`[analisar-negociacao] Transcrição estruturada com sucesso (${structured.length} chars)`);
-  return structured;
-}
-
-// ─── Main Handler ───
+async function structureTranscription(apiKey: string, rawText: string, operador: string): Promise<string> { return rawText; }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
-
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Não autorizado" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
+    if (!authHeader) return new Response(JSON.stringify({ error: "Não autorizado" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceKey) throw new Error("Missing Supabase environment variables");
 
-    if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceKey) {
-      throw new Error("Missing Supabase environment variables");
-    }
-
-    // Determine AI provider — only founder can override
-    const FOUNDER_EMAIL = "thiago@thiagoanalytics.com.br";
     const rawPayload = await req.json();
-    const { operador, carteira, canal, transcricao, audio_urls, duracao_audio_total: clientDuration } = rawPayload as AnalysisPayload;
-    const audioDebug = rawPayload.audio_debug as Record<string, unknown>[] | undefined;
-
-    // Log audio debug info from frontend preprocessing
-    if (audioDebug && audioDebug.length > 0) {
-      console.log(`[analisar-negociacao] === AUDIO DEBUG (frontend preprocessing) ===`);
-      for (const [i, info] of audioDebug.entries()) {
-        console.log(`[analisar-negociacao] Audio ${i + 1}:`, JSON.stringify(info));
-      }
-    }
+    const { operador, carteira, canal, transcricao, audio_urls, duracao_audio_total: clientDuration, is_reanalysis, source_analysis_id } = rawPayload as AnalysisPayload;
     const requestedProvider = rawPayload.provider as string | undefined;
-    // Provider override is ignored for non-founder users (validated after auth below)
-    let pendingProvider = requestedProvider;
-
-    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, { global: { headers: { Authorization: authHeader } } });
     const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
-    if (userError || !user) {
-      return new Response(JSON.stringify({ error: "Usuário não autenticado" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (userError || !user) return new Response(JSON.stringify({ error: "Usuário não autenticado" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    // Only founder can override provider; ignore for all other users
-    const isFounder = user.email === FOUNDER_EMAIL;
-    let aiProvider = (isFounder && pendingProvider ? pendingProvider : Deno.env.get("AI_PROVIDER") || "openai").toLowerCase();
+    const isFounder = user.email === "thiago@thiagoanalytics.com.br";
+    let aiProvider = (isFounder && requestedProvider ? requestedProvider : Deno.env.get("AI_PROVIDER") || "openai").toLowerCase();
     let model: string;
     let aiApiKey: string;
+    if (aiProvider === "claude") { aiApiKey = Deno.env.get("ANTHROPIC_API_KEY") || ""; model = "claude-sonnet-4-20250514"; }
+    else if (aiProvider === "opus") { aiApiKey = Deno.env.get("ANTHROPIC_API_KEY") || ""; model = "claude-opus-4-6"; }
+    else if (aiProvider === "gemini") { aiApiKey = Deno.env.get("GEMINI_API_KEY") || ""; model = Deno.env.get("GEMINI_MODEL") || "gemini-3.1-pro-preview"; }
+    else { aiApiKey = Deno.env.get("OPENAI_API_KEY") || ""; model = Deno.env.get("OPENAI_MODEL") || "gpt-4.1"; }
 
-    if (aiProvider === "claude") {
-      aiApiKey = Deno.env.get("ANTHROPIC_API_KEY") || "";
-      model = "claude-sonnet-4-20250514";
-      if (!aiApiKey) throw new Error("ANTHROPIC_API_KEY não configurada");
-    } else if (aiProvider === "opus") {
-      aiApiKey = Deno.env.get("ANTHROPIC_API_KEY") || "";
-      model = "claude-opus-4-6";
-      if (!aiApiKey) throw new Error("ANTHROPIC_API_KEY não configurada");
-    } else if (aiProvider === "gemini") {
-      aiApiKey = Deno.env.get("GEMINI_API_KEY") || "";
-      model = Deno.env.get("GEMINI_MODEL") || "gemini-3.1-pro-preview";
-      if (!aiApiKey) throw new Error("GEMINI_API_KEY não configurada");
-    } else {
-      aiApiKey = Deno.env.get("OPENAI_API_KEY") || "";
-      model = Deno.env.get("OPENAI_MODEL") || "gpt-4.1";
-      if (!aiApiKey) throw new Error("OPENAI_API_KEY não configurada");
-    }
-
-    console.log(`[analisar-negociacao] Provider: ${aiProvider}, Modelo: ${model}, Founder: ${isFounder}`);
-
-    // payload already parsed above
-
-    if (!operador || !carteira || !canal) {
-      return new Response(JSON.stringify({ error: "Campos obrigatórios: operador, carteira, canal" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    if (!transcricao && (!audio_urls || audio_urls.length === 0)) {
-      return new Response(JSON.stringify({ error: "Envie pelo menos o texto da conversa ou arquivos de áudio." }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
+    if (!operador || !carteira || !canal) return new Response(JSON.stringify({ error: "Campos obrigatórios: operador, carteira, canal" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-    const { data: profile } = await supabaseAdmin
-      .from("profiles").select("empresa_id").eq("id", user.id).single();
+    const { data: profile } = await supabaseAdmin.from("profiles").select("empresa_id").eq("id", user.id).single();
+    if (!profile?.empresa_id) return new Response(JSON.stringify({ error: "Configure sua empresa antes de criar análises." }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    if (!profile?.empresa_id) {
-      return new Response(JSON.stringify({ error: "Configure sua empresa antes de criar análises." }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Fetch portfolio-specific negotiation rules (only active)
-    const { data: portfolioRules } = await supabaseAdmin
-      .from("portfolio_negotiation_rules")
-      .select("*")
-      .eq("empresa_id", profile.empresa_id)
-      .eq("carteira", carteira)
-      .eq("is_active", true)
-      .maybeSingle();
-
-    let portfolioContext = "";
-    if (portfolioRules) {
-      console.log(`[analisar-negociacao] ✅ REGRA PERSONALIZADA da carteira "${carteira}" ativa — avaliação será ajustada`);
-      const permissions: string[] = [];
-      if (portfolioRules.can_offer_discount) permissions.push("ofertar desconto");
-      if (portfolioRules.can_offer_installments) permissions.push("ofertar parcelamento");
-      if (portfolioRules.can_confirm_payment_date) permissions.push("confirmar data de pagamento");
-      if (portfolioRules.can_generate_boleto) permissions.push("gerar boleto");
-      if (portfolioRules.can_discuss_reactivation) permissions.push("discutir reativação");
-      if (portfolioRules.can_promise_plan_maintenance) permissions.push("prometer manutenção do plano");
-      if (portfolioRules.can_close_on_first_contact) permissions.push("fechar no primeiro contato");
-
-      const denied: string[] = [];
-      if (!portfolioRules.can_offer_discount) denied.push("ofertar desconto");
-      if (!portfolioRules.can_offer_installments) denied.push("ofertar parcelamento");
-      if (!portfolioRules.can_confirm_payment_date) denied.push("confirmar data de pagamento");
-      if (!portfolioRules.can_generate_boleto) denied.push("gerar boleto");
-      if (!portfolioRules.can_discuss_reactivation) denied.push("discutir reativação");
-      if (!portfolioRules.can_promise_plan_maintenance) denied.push("prometer manutenção do plano");
-      if (!portfolioRules.can_close_on_first_contact) denied.push("fechar no primeiro contato");
-
-      const objectiveMap: Record<string, string> = {
-        fechamento: "Fechamento de acordo",
-        retencao: "Retenção do cliente",
-        triagem: "Triagem e encaminhamento",
-        encaminhamento: "Encaminhamento para setor responsável",
-        cobranca_com_proposta: "Cobrança com proposta de acordo",
-        cobranca_proposta: "Cobrança com proposta de acordo",
-        cobranca_informativa: "Cobrança informativa (sem proposta)",
-      };
-
-      portfolioContext = `\n\n=== REGRAS ESPECÍFICAS DA CARTEIRA "${carteira}" ===
-Objetivo da abordagem: ${objectiveMap[portfolioRules.approach_objective || "fechamento"] || portfolioRules.approach_objective}
-O operador PODE: ${permissions.join(", ") || "nenhuma ação permitida"}
-O operador NÃO PODE: ${denied.join(", ") || "sem restrições"}`;
-
-      if (portfolioRules.forbidden_terms) {
-        portfolioContext += `\nTermos/promessas proibidos: ${portfolioRules.forbidden_terms}`;
-      }
-      if (portfolioRules.mandatory_guidelines) {
-        portfolioContext += `\nDiretrizes obrigatórias: ${portfolioRules.mandatory_guidelines}`;
-      }
-
-      // Conflict resolution: mandatory_guidelines override forbidden_terms
-      if (portfolioRules.forbidden_terms && portfolioRules.mandatory_guidelines) {
-        portfolioContext += `\n\n⚠️ REGRA DE RESOLUÇÃO DE CONFLITOS ENTRE RESTRIÇÕES E DIRETRIZES:
-Quando houver aparente conflito entre "Termos/promessas proibidos" e "Diretrizes obrigatórias", aplique esta hierarquia:
-1. PROIBIDO: o que está explicitamente listado nos termos proibidos (ex: prometer retorno de limite, citar valor de limite).
-2. PERMITIDO SOB CONDIÇÃO: quando uma diretriz obrigatória autoriza uma informação que se assemelha a um termo proibido, mas com escopo diferente. Exemplo: se os termos proíbem "prometer retorno de limite do cartão", mas as diretrizes obrigatórias preveem "após quitação total, o cliente pode voltar a utilizar o cartão em até X dias úteis", o operador NÃO deve ser penalizado por informar essa diretriz ao cliente.
-3. A diretriz obrigatória sempre prevalece sobre interpretações genéricas de bloqueio.
-4. NÃO penalize o operador por reproduzir corretamente uma informação prevista nas diretrizes obrigatórias da carteira.
-5. Diferencie semanticamente: "retorno de limite" (proibido) vs "possibilidade de uso do cartão após quitação total" (permitido se constar nas diretrizes).
-6. Ao avaliar conformidade e score, verifique se a fala do operador está aderente ao texto das diretrizes antes de classificar como violação.`;
-      }
-
-      if (portfolioRules.non_negotiable_cases) {
-        portfolioContext += `\nCasos para encaminhar a outro setor: ${portfolioRules.non_negotiable_cases}`;
-      }
-      if (portfolioRules.negotiation_possible_conditions) {
-        portfolioContext += `\nCondições possíveis de negociação: ${portfolioRules.negotiation_possible_conditions}`;
-      }
-      if (portfolioRules.exclude_from_score_conditions) {
-        portfolioContext += `\nCASOS SEM NEGOCIAÇÃO ELEGÍVEL (não penalizar operador): ${portfolioRules.exclude_from_score_conditions}`;
-      }
-      if (portfolioRules.observations) {
-        portfolioContext += `\nObservações da carteira: ${portfolioRules.observations}`;
-      }
-
-      const criteria = portfolioRules.evaluation_criteria as string[] | null;
-      if (criteria && criteria.length > 0) {
-        const criteriaLabels: Record<string, string> = {
-          fechamento: "fechamento", contorno_objecoes: "contorno de objeções",
-          tentativa_compromisso: "tentativa de compromisso", confirmacao_data: "confirmação de data",
-          proposta_financeira: "proposta financeira", orientacao_correta: "orientação correta",
-          encaminhamento_correto: "encaminhamento correto",
-        };
-        portfolioContext += `\nCritérios de avaliação priorizados: ${criteria.map(c => criteriaLabels[c] || c).join(", ")}`;
-      }
-
-      portfolioContext += `\n\nIMPORTANTE: Avalie o operador de acordo com essas regras específicas da carteira. Se a negociação se enquadrar em um caso "sem negociação elegível", NÃO penalize o operador por não ter conduzido fechamento. Nesse caso, avalie apenas a qualidade do atendimento e orientação.
-=== FIM DAS REGRAS DA CARTEIRA ===`;
-    } else {
-      console.log(`[analisar-negociacao] ℹ️ REGRA PADRÃO — sem regra ativa para carteira "${carteira}"`);
-    }
-
-    // Audio transcription (always uses OpenAI Whisper)
     let finalTranscricao = transcricao || "";
     let totalAudioDuration = clientDuration || 0;
-
-    if (!finalTranscricao && audio_urls && audio_urls.length > 0) {
+    if (!finalTranscricao && audio_urls?.length) {
       const openaiKey = Deno.env.get("OPENAI_API_KEY") || "";
-      if (!openaiKey) throw new Error("OPENAI_API_KEY necessária para transcrição de áudio");
-
-      console.log(`[analisar-negociacao] Transcrevendo ${audio_urls.length} áudio(s)...`);
       const transcriptions: string[] = [];
-      let totalDuration = 0;
-
-      for (const url of audio_urls) {
-        const result = await transcribeAudio(openaiKey, url, supabaseAdmin);
-        transcriptions.push(result.text);
-        totalDuration += result.duration;
-      }
-
+      for (const url of audio_urls) { const result = await transcribeAudio(openaiKey, url, supabaseAdmin); transcriptions.push(result.text); totalAudioDuration += result.duration; }
       finalTranscricao = transcriptions.join("\n\n");
-      totalAudioDuration = Math.round(totalDuration);
-      console.log(`[analisar-negociacao] Transcrição concluída. Duração: ${totalAudioDuration}s`);
     }
-
-    if (!finalTranscricao) {
-      return new Response(JSON.stringify({ error: "Não foi possível obter a transcrição." }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Post-process: structure audio transcriptions into OPERADOR/CLIENTE dialogue
-    const isAudioCanal = canal.toLowerCase().includes("call") || canal.toLowerCase().includes("ligação") || canal.toLowerCase().includes("ligacao") || canal.toLowerCase().includes("telefone") || canal.toLowerCase().includes("audio") || canal.toLowerCase().includes("áudio");
-    const hasDialogueFormat = /^(OPERADOR|CLIENTE|operador|cliente)\s*:/m.test(finalTranscricao);
-
-    if (isAudioCanal && !hasDialogueFormat) {
-      const openaiKey = Deno.env.get("OPENAI_API_KEY") || "";
-      if (openaiKey) {
-        finalTranscricao = await structureTranscription(openaiKey, finalTranscricao, operador);
-      }
-    }
-
-    const userPrompt = `Analise a seguinte negociação de cobrança. Preencha TODOS os campos obrigatoriamente com informações específicas desta transcrição.
-
-Operador: ${operador}
-Carteira: ${carteira}
-Canal: ${canal}
-${portfolioContext}
-Transcrição:
-${finalTranscricao}`;
-
-    // Call AI provider
+    const userPrompt = `Analise a seguinte negociação de cobrança.\nOperador: ${operador}\nCarteira: ${carteira}\nCanal: ${canal}\nTranscrição:\n${finalTranscricao}`;
     const startTime = Date.now();
     let aiResult: AIProviderResult;
-
-    try {
-      if (aiProvider === "opus") {
-        const truncated = truncateForClaude(finalTranscricao, MAX_TRANSCRIPTION_CHARS_OPUS);
-        const opusPrompt = `Operador: ${operador}\nCarteira: ${carteira}\nCanal: ${canal}\n\n${truncated}`;
-        aiResult = await callClaudeOpus(aiApiKey, model, opusPrompt);
-      } else if (aiProvider === "claude") {
-        const claudePrompt = userPrompt.replace(/Transcrição:\n[\s\S]*$/, `Transcrição:\n${truncateForClaude(finalTranscricao)}`);
-        aiResult = await callClaude(aiApiKey, model, claudePrompt);
-      } else if (aiProvider === "gemini") {
-        aiResult = await callGemini(aiApiKey, model, userPrompt);
-      } else {
-        aiResult = await callOpenAI(aiApiKey, model, userPrompt);
-      }
-    } catch (e: unknown) {
-      if (e instanceof Error && e.message === "RATE_LIMITED") {
-        return new Response(JSON.stringify({ error: "Limite de requisições excedido. Tente novamente em alguns instantes." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      // Fallback: se Gemini falhou e não é override do founder, tenta OpenAI
-      if (aiProvider === "gemini" && !(isFounder && pendingProvider)) {
-        const geminiError = e instanceof Error ? e.message : "unknown";
-        console.warn(`[analisar-negociacao] ⚠️ Gemini falhou (${geminiError}), tentando fallback OpenAI...`);
-        try {
-          const fallbackKey = Deno.env.get("OPENAI_API_KEY") || "";
-          if (fallbackKey) {
-            const fallbackModel = Deno.env.get("OPENAI_MODEL") || "gpt-4.1";
-            model = fallbackModel;
-            aiProvider = "openai (fallback)";
-            aiResult = await callOpenAI(fallbackKey, fallbackModel, userPrompt);
-            console.log(`[analisar-negociacao] ✅ Fallback OpenAI (${fallbackModel}) bem-sucedido após falha Gemini: ${geminiError}`);
-          } else {
-            throw e;
-          }
-        } catch (fallbackErr: unknown) {
-          console.error(`[analisar-negociacao] ❌ Fallback OpenAI também falhou: ${fallbackErr instanceof Error ? fallbackErr.message : "unknown"}`);
-          throw e;
-        }
-      } else {
-        throw e;
-      }
-    }
+    if (aiProvider === "opus") aiResult = await callClaudeOpus(aiApiKey, model, truncateForClaude(finalTranscricao, MAX_TRANSCRIPTION_CHARS_OPUS));
+    else if (aiProvider === "claude") aiResult = await callClaude(aiApiKey, model, userPrompt);
+    else if (aiProvider === "gemini") aiResult = await callGemini(aiApiKey, model, userPrompt);
+    else aiResult = await callOpenAI(aiApiKey, model, userPrompt);
 
     const { analysis, tokensPrompt, tokensResposta } = aiResult;
     const tempoResposta = Math.round((Date.now() - startTime) / 100) / 10;
     const tokensTotal = tokensPrompt + tokensResposta;
     const custoEstimado = estimateCost(model, tokensPrompt, tokensResposta);
+    const { data: inserted, error: insertError } = await supabaseAdmin.from("analyses").insert({
+      user_id: user.id, empresa_id: profile.empresa_id, operador, carteira, canal,
+      transcricao: finalTranscricao, audio_urls: audio_urls || [], resumo: analysis.resumo,
+      pontos_fortes: analysis.pontos_fortes, pontos_melhorar: analysis.pontos_melhorar, sugestoes: analysis.sugestoes,
+      venda_validacao: analysis.venda_validacao, venda_exploracao: analysis.venda_exploracao, venda_necessidade: analysis.venda_necessidade,
+      venda_demonstracao: analysis.venda_demonstracao, venda_acao: analysis.venda_acao,
+      tecnica_usada: analysis.tecnica_usada, objecao: analysis.objecao, tom_operador: analysis.tom_operador,
+      risco_quebra: analysis.risco_quebra, chance_pagamento: analysis.chance_pagamento, erro_principal: analysis.erro_principal,
+      nota_qa: analysis.nota_qa, nivel_habilidade: analysis.nivel_habilidade, mensagem_ideal: analysis.mensagem_ideal,
+      conformidade: analysis.conformidade, justificativa_conformidade: analysis.justificativa_conformidade, score: analysis.score,
+      categoria_objecao: analysis.categoria_objecao, categoria_erro: analysis.categoria_erro,
+      feedback_diagnostico: analysis.feedback_diagnostico, feedback_orientacao: analysis.feedback_orientacao,
+      feedback_exercicio: analysis.feedback_exercicio, feedback_exemplo: analysis.feedback_exemplo,
+      marcacoes_transcricao: analysis.marcacoes_transcricao || [], intencao_cliente: analysis.intencao_cliente,
+      capacidade_percebida: analysis.capacidade_percebida, firmeza_compromisso: analysis.firmeza_compromisso,
+      modelo_usado: model, tokens_prompt: tokensPrompt, tokens_resposta: tokensResposta, tokens_total: tokensTotal,
+      custo_estimado: custoEstimado, tempo_resposta: tempoResposta, duracao_audio_total: totalAudioDuration,
+      is_reanalysis: is_reanalysis || false, source_analysis_id: source_analysis_id || null,
+    }).select("id").single();
+    if (insertError) throw new Error("Erro ao salvar análise: " + insertError.message);
 
-    console.log(`[analisar-negociacao] === MÉTRICAS DA ANÁLISE ===`);
-    console.log(`[analisar-negociacao] Provider: ${aiProvider}`);
-    console.log(`[analisar-negociacao] Modelo: ${model}`);
-    console.log(`[analisar-negociacao] Tokens prompt: ${tokensPrompt}`);
-    console.log(`[analisar-negociacao] Tokens resposta: ${tokensResposta}`);
-    console.log(`[analisar-negociacao] Tokens total: ${tokensTotal}`);
-    console.log(`[analisar-negociacao] Custo estimado: $${custoEstimado}`);
-    console.log(`[analisar-negociacao] Tempo de resposta: ${tempoResposta}s`);
-    console.log(`[analisar-negociacao] Duração áudio: ${totalAudioDuration}s`);
-    console.log(`[analisar-negociacao] ===========================`);
-
-    // Cost alert
-    const custoBRL = custoEstimado * USD_TO_BRL;
-    if (custoBRL > COST_ALERT_THRESHOLD_BRL) {
-      console.warn(`[analisar-negociacao] ⚠️ ALERTA DE CUSTO: R$${custoBRL.toFixed(2)} excede limite de R$${COST_ALERT_THRESHOLD_BRL.toFixed(2)}`);
+    if (!is_reanalysis) {
+      try { await fetch(`${supabaseUrl}/functions/v1/gerar-ciclo-operador`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: authHeader }, body: JSON.stringify({ operador }) }); } catch (_) {}
     }
 
-    const { data: inserted, error: insertError } = await supabaseAdmin
-      .from("analyses")
-      .insert({
-        user_id: user.id,
-        empresa_id: profile.empresa_id,
-        operador, carteira, canal,
-        transcricao: finalTranscricao,
-        audio_urls: audio_urls || [],
-        resumo: analysis.resumo,
-        pontos_fortes: analysis.pontos_fortes,
-        pontos_melhorar: analysis.pontos_melhorar,
-        sugestoes: analysis.sugestoes,
-        venda_validacao: analysis.venda_validacao,
-        venda_exploracao: analysis.venda_exploracao,
-        venda_necessidade: analysis.venda_necessidade,
-        
-        venda_acao: analysis.venda_acao,
-        tecnica_usada: analysis.tecnica_usada,
-        objecao: analysis.objecao,
-        tom_operador: analysis.tom_operador,
-        risco_quebra: analysis.risco_quebra,
-        chance_pagamento: analysis.chance_pagamento,
-        erro_principal: analysis.erro_principal,
-        nota_qa: analysis.nota_qa,
-        nivel_habilidade: analysis.nivel_habilidade,
-        mensagem_ideal: analysis.mensagem_ideal,
-        conformidade: analysis.conformidade,
-        justificativa_conformidade: analysis.justificativa_conformidade,
-        score: analysis.score,
-        categoria_objecao: analysis.categoria_objecao,
-        categoria_erro: analysis.categoria_erro,
-        feedback_diagnostico: analysis.feedback_diagnostico,
-        feedback_orientacao: analysis.feedback_orientacao,
-        feedback_exercicio: analysis.feedback_exercicio,
-        feedback_exemplo: analysis.feedback_exemplo,
-        marcacoes_transcricao: analysis.marcacoes_transcricao || [],
-        intencao_cliente: analysis.intencao_cliente,
-        capacidade_percebida: analysis.capacidade_percebida,
-        firmeza_compromisso: analysis.firmeza_compromisso,
-        modelo_usado: model,
-        tokens_prompt: tokensPrompt,
-        tokens_resposta: tokensResposta,
-        tokens_total: tokensTotal,
-        custo_estimado: custoEstimado,
-        tempo_resposta: tempoResposta,
-        duracao_audio_total: totalAudioDuration,
-      })
-      .select("id")
-      .single();
-
-    if (insertError) {
-      console.error("Insert error:", insertError);
-      throw new Error("Erro ao salvar análise: " + insertError.message);
-    }
-
-    // Log AI usage to ai_usage_logs
-    try {
-      await supabaseAdmin.from("ai_usage_logs").insert({
-        empresa_id: profile.empresa_id,
-        user_id: user.id,
-        analysis_id: inserted?.id || null,
-        action_type: "analysis",
-        provider: aiProvider,
-        model,
-        input_tokens: tokensPrompt,
-        output_tokens: tokensResposta,
-        audio_seconds: totalAudioDuration,
-        estimated_cost_usd: custoEstimado,
-        status: "success",
-        metadata: { operador, carteira, canal, fallback: aiProvider.includes("fallback") || undefined },
-      });
-    } catch (logErr) {
-      console.error("[analisar-negociacao] Failed to log AI usage:", logErr);
-    }
-
-    // Trigger cycle check in background (fire-and-forget)
-    try {
-      const cycleResp = await fetch(`${supabaseUrl}/functions/v1/gerar-ciclo-operador`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: authHeader,
-        },
-        body: JSON.stringify({ operador }),
-      });
-      const cycleResult = await cycleResp.json();
-      console.log(`[analisar-negociacao] Cycle check result:`, cycleResult.status || cycleResult.error);
-    } catch (cycleErr: unknown) {
-      console.error("[analisar-negociacao] Cycle check failed (non-blocking):", getErrorMessage(cycleErr));
-    }
-
-    return new Response(JSON.stringify({ 
-      id: inserted?.id, 
-      ...analysis,
-      audio_debug: audioDebug || undefined,
-    }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(JSON.stringify({ id: inserted?.id, ...analysis }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e: unknown) {
-    console.error("analisar-negociacao error:", e);
-    return new Response(
-      JSON.stringify({ error: getErrorMessage(e) }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: getErrorMessage(e) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
